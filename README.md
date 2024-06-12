@@ -15,7 +15,7 @@ Add a `start` script to your `package.json` file.
 ```json
 {
   "scripts": {
-    "preview": "vite-live-preview"
+    "start": "vite-live-preview"
   }
 }
 ```
