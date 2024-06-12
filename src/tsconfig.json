@@ -1,0 +1,12 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "lib": [
+      "ES2022",
+      // Required for "client.js".
+      "DOM",
+      "DOM.Iterable"
+    ]
+  },
+}

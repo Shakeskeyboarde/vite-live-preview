@@ -1,0 +1,16 @@
+.vscode/
+.terraform/
+node_modules/
+lib/
+dist/
+out/
+coverage/
+
+.DS_Store
+.env*
+*.tar
+*.gz
+*.tgz
+*.zip
+*.log
+aws.ini

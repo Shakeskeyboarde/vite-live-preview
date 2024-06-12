@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "module": "Node16",
+    "target": "ES2022",
+    "lib": [
+      "ES2022"
+    ],
+    "types": [
+      "node"
+    ],
+    "strict": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "forceConsistentCasingInFileNames": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "esModuleInterop": true,
+    "allowJs": true,
+    "checkJs": true,
+    "noEmit": true
+  },
+  "exclude": [
+    "**/.git",
+    "**/node_modules",
+    "**/lib",
+    "**/dist",
+    "**/out",
+    "**/coverage"
+  ]
+}
