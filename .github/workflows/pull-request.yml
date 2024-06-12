@@ -42,7 +42,7 @@ jobs:
           set -e
           pnpm test
 
-      # - name: Publish (dry-run)
-      #   run: |
-      #     set -e
-      #     pnpm -r publish --no-git-checks --dry-run
+      - name: Publish (dry-run)
+        run: |
+          set -e
+          pnpm -r publish --no-git-checks --dry-run
