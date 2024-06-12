@@ -25,7 +25,9 @@ const cli = createCommand('vite-live-preview')
   .option('--strictPort', '[boolean] exit if specified port is already in use')
   .option('--open [path]', '[boolean | string] open browser on startup')
   .option('--reload [boolean]', '[boolean] allow/disable automatic browser reload on rebuild', parseBooleanArg)
+  .option('--outDir <dir>', '[string] output directory (default: dist)')
   .option('-c, --config <file>', '[string] use specified config file')
+  .option('--base <path>', '[string] public base path (default: /)')
   .option('-l, --logLevel <level>', '[string] info | warn | error | silent', parseLogLevelArg)
   .option('--clearScreen [boolean]', '[boolean] allow/disable clear screen when logging', parseBooleanArg)
   .option('-d, --debug [feat]', '[string | boolean] show debug logs')
@@ -45,6 +47,8 @@ const {
   open,
   reload: allowReload = true,
   mode = 'development',
+  base,
+  outDir,
   ...previewOptions
 } = cli.opts();
 const sockets = new Set<WebSocket>();
@@ -81,6 +85,8 @@ const config: InlineConfig = mergeConfig<InlineConfig, InlineConfig>(
     configFile: false,
     logLevel,
     mode,
+    base,
+    build: { outDir },
   },
 );
 

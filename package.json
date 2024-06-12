@@ -1,6 +1,6 @@
 {
   "name": "vite-live-preview",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Start a Vite build (with watching) and preview server.",
   "license": "ISC",
   "repository": {
@@ -19,7 +19,7 @@
     "build": "vite build",
     "eslint": "eslint .",
     "depcheck": "depcheck --ignores=typescript",
-    "test": "pnpm eslint && pnpm depcheck",
+    "test": "pnpm eslint --max-warnings=0 && pnpm depcheck",
     "global-install": "pnpm i -g \"$PWD\""
   },
   "files": [
