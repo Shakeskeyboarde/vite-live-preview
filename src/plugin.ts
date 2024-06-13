@@ -54,6 +54,7 @@ export default ({ reload = true, enable }: PreviewModeOptions = {}): Plugin => {
   let resolvedConfig: ResolvedConfig | undefined;
   let previewServer: PreviewServer | undefined;
   let error: Error | undefined;
+  let sendTimeout: NodeJS.Timeout | undefined;
 
   const sockets = new Set<WebSocket>();
 
@@ -98,9 +99,12 @@ export default ({ reload = true, enable }: PreviewModeOptions = {}): Plugin => {
       if (previewServer) {
         if (reload) {
           previewServer.config.logger.info(chalk.green('page-reload'), { timestamp: true });
-          sockets.forEach((socket) => {
-            socket.send(JSON.stringify({ type: 'page-reload' }));
-          });
+          clearTimeout(sendTimeout);
+          sendTimeout = setTimeout(() => {
+            sockets.forEach((socket) => {
+              socket.send(JSON.stringify({ type: 'page-reload' }));
+            });
+          }, 250).unref();
         }
 
         if (resolvedConfig?.clearScreen !== false) {
