@@ -79,7 +79,6 @@ export default ({ reload = true, enable }: PreviewModeOptions = {}): Plugin => {
       if (!enabled) return;
 
       resolvedConfig = config;
-      console.log(resolvedConfig.clearScreen);
     },
     buildStart() {
       if (!resolvedConfig) return;
