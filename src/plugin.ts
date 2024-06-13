@@ -2,6 +2,7 @@ import { type Server } from 'node:http';
 import path from 'node:path';
 
 import ansiHtml from 'ansi-html';
+import chalk from 'chalk';
 import { htmlEscape } from 'escape-goat';
 import { type InlineConfig, mergeConfig, type Plugin, preview, type PreviewServer, type ResolvedConfig, type WebSocket } from 'vite';
 import { WebSocketServer } from 'ws';
@@ -97,14 +98,14 @@ export default ({ reload = true, enable }: PreviewModeOptions = {}): Plugin => {
     async closeBundle() {
       if (previewServer) {
         if (reload) {
-          previewServer.config.logger.info('page-reload', { timestamp: true });
+          previewServer.config.logger.info(chalk.green('page-reload'), { timestamp: true });
           sockets.forEach((socket) => {
             socket.send(JSON.stringify({ type: 'page-reload' }));
           });
         }
 
         if (resolvedConfig?.clearScreen !== false) {
-          previewServer.config.logger.info('preview server ready', { timestamp: true });
+          previewServer.config.logger.info(chalk.green('preview server ready'), { timestamp: true });
           console.log();
           previewServer.printUrls();
         }
@@ -281,7 +282,7 @@ export default ({ reload = true, enable }: PreviewModeOptions = {}): Plugin => {
         },
       ));
 
-      previewServer.config.logger.info('preview server started', { timestamp: true });
+      previewServer.config.logger.info(chalk.green('preview server started'), { timestamp: true });
       console.log();
       previewServer.printUrls();
     },
