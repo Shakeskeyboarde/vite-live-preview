@@ -15,7 +15,7 @@ socket.addEventListener('message', (event) => {
   try {
     const message = JSON.parse(event.data);
 
-    if (message?.type === 'full-reload') {
+    if (message?.type === 'page-reload') {
       window.location.reload();
     }
   }
