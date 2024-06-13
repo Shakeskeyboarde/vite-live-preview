@@ -1,7 +1,7 @@
 {
   "name": "vite-live-preview",
-  "version": "0.1.1",
-  "description": "Start a Vite build (with watching) and preview server.",
+  "version": "0.1.2",
+  "description": "Vite preview watch mode.",
   "license": "ISC",
   "repository": {
     "type": "git",
@@ -29,6 +29,10 @@
   "bin": {
     "vite-live-preview": "bin.js",
     "vlp": "bin.js"
+  },
+  "exports": {
+    "types": "./dist/index.d.ts",
+    "import": "./dist/index.js"
   },
   "type": "module",
   "packageManager": "pnpm@9.3.0+sha256.e1f9e8d1a16607a46dd3c158b5f7a7dc7945501d1c6222d454d63d033d1d918f",

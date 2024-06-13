@@ -1,14 +1,30 @@
 # Vite Live Preview
 
-Start preview server which updates on file changes.
+Vite build with preview.
 
-## Usage
+- [Getting Started](#getting-started)
+- [CLI](#cli)
+  - [CLI Options](#cli-options)
+    - [`--reload [boolean]`](#--reload-boolean)
+- [Plugin](#plugin)
+  - [Plugin Options](#plugin-options)
+    - [`reload: boolean`](#reload-boolean)
+    - [`enable: boolean`](#enable-boolean)
+- [The Problem](#the-problem)
+  - [Related Github Issues](#related-github-issues)
+
+
+## Getting Started
 
 Install the package in your project.
 
 ```sh
 npm install --save-dev vite-live-preview
 ```
+
+Once installed, you can either use the [CLI](#cli) or the [plugin](#plugin).
+
+## CLI
 
 Add a `start` script to your `package.json` file.
 
@@ -32,15 +48,51 @@ The command can be run with `npx` if you prefer not to add it as a dependency.
 npx vite-live-preview
 ```
 
-## Options
+### CLI Options
 
 All Vite [preview command options](https://vitejs.dev/guide/cli#vite-preview) are supported, in addition to the following options.
 
-### `--reload [boolean]`
+#### `--reload [boolean]`
 
 Allow or disable automatic browser reloading on rebuild. The default is true.
 
 Use `--reload false` to disable automatic reloading. Manually reloading the page after a rebuild will still show the updated content.
+
+## Plugin
+
+This utility can also be used as a Vite plugin.
+
+```ts
+import { defineConfig } from 'vite'
+import livePreview from 'vite-live-preview'
+
+export default defineConfig({
+  plugins: [livePreview({ /* options */ })]
+  preview: { /* (optional) configure the plugin server. */ }
+})
+```
+
+The plugin only takes effect when building with the `mode` set to `preview` or `preview:*` (eg. `preview:production`).
+
+```sh
+vite build --mode=preview
+```
+
+> Note: A preview mode implies watching, so the Vite `--watch` flag is optional.
+
+### Plugin Options
+
+The plugin accepts the following options.
+
+#### `reload: boolean`
+
+Allow or disable automatic browser reloading on rebuild. The default is true. Set it to false to require manual browser reloading.
+
+#### `enable: boolean`
+
+Forcibly enable or disable the plugin.
+
+By default, the plugin is automatically enabled when the mode is `preview` or `preview:*`. If this option is set to true, then the plugin is enabled even if a preview mode is not present. If this option is false, then the plugin is disabled even if a preview mode is present.
 
 ## The Problem
 

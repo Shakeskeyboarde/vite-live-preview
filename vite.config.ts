@@ -8,7 +8,7 @@ process.chdir(__dirname);
 export default defineConfig({
   plugins: [
     checker({ typescript: { tsconfigPath: 'src/tsconfig.json' } }),
-    lib({ entry: 'src/index.ts', bundle: true, external: 'auto' }),
+    lib({ entry: ['src/index.ts', 'src/bin.ts'], bundle: true, external: 'auto' }),
     data(),
   ],
 });
