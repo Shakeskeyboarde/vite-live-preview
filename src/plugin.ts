@@ -71,7 +71,9 @@ export default ({ reload = true, enable }: PreviewModeOptions = {}): Plugin => {
 
           return {
             mode: config.mode ?? (typeof mode === 'string' ? mode : 'development'),
-            build: enabled ? { watch: {} } : {},
+            build: enabled
+              ? { watch: { buildDelay: config.build?.watch?.buildDelay ?? 750 } }
+              : {},
           };
         }
       },
