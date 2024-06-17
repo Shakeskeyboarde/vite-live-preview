@@ -1,11 +1,11 @@
 {
   "name": "vite-live-preview",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "Vite preview watch mode.",
   "license": "ISC",
   "repository": {
     "type": "git",
-    "url": "git+https://Shakeskeyboarde/vite-live-preview.git"
+    "url": "https://github.com/Shakeskeyboarde/vite-live-preview.git"
   },
   "keywords": [
     "vite",
