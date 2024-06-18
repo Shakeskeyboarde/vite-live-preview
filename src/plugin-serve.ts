@@ -103,6 +103,11 @@ export default ({ onConnected, getError }: Options): Plugin => {
               return;
             }
 
+            // XXX: Disable compression so we can intercept the response body.
+            // Vite using compression seems to be undocumented, but it's there
+            // in the source.
+            req.headers['accept-encoding'] = 'identity';
+
             Object.assign(res, { [RESPONSE_HOOK_SYMBOL]: true });
 
             const chunks: Buffer[] = [];
@@ -174,6 +179,7 @@ export default ({ onConnected, getError }: Options): Plugin => {
               // If pushing fails, it means that the chunk type wasn't
               // supported. Restore the original response. This will also
               // commit any chunks that were already pushed.
+              debug(`unsupported chunk type written to "${originalUrl}".`);
               restore?.();
 
               return res.write(chunk, ...args);
