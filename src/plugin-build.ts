@@ -28,8 +28,7 @@ export interface PreviewModeOptions {
  * `--watch` option is optional/implied.
  */
 export default ({ reload = true, enable }: PreviewModeOptions = {}): Plugin => {
-  let enabled = false;
-  let logger = createLogger();
+  let logger = createLogger('silent');
   let clearScreen = false;
   let buildConfig: InlineConfig & { configFile: string | false } | undefined;
   let previewServer: PreviewServer | undefined;
@@ -40,28 +39,20 @@ export default ({ reload = true, enable }: PreviewModeOptions = {}): Plugin => {
 
   const plugin: Plugin = {
     name: 'live-preview-build',
-    config(config, env) {
-      if (env.command === 'build' && enable !== false && (enable === true || env.mode.startsWith('preview'))) {
-        enabled = true;
-        debug('enabled.');
-
-        return {
-          build: {
-            // Preview modes imply watching.
-            watch: {
-              // XXX: Default the build delay to 750ms to prevent ENOENT errors
-              // on page reloads
-              buildDelay: config.build?.watch?.buildDelay ?? 750,
-            },
-          },
-        };
-      }
-    },
     configResolved(config) {
+      // Disabled explicitly.
+      if (enable === false) return;
+      // Disabled if not building (serving).
+      if (config.command !== 'build') return;
+      // Disabled if not explicitly enabled and not a preview mode.
+      if (enable !== true && !config.mode.startsWith('preview')) return;
+      // Disabled if the last plugin with this plugin's name is not this
+      // instance of the plugin.
+      if (Array.from(config.plugins).reverse().find((p) => p.name === plugin.name) !== plugin) return;
+
+      debug('enabled.');
+
       logger = config.logger;
-
-      if (!enabled) return;
-
       clearScreen = config.clearScreen !== false;
 
       // XXX: This is a little confusing, but to get the preview server to
@@ -73,6 +64,17 @@ export default ({ reload = true, enable }: PreviewModeOptions = {}): Plugin => {
         ...config.inlineConfig,
         configFile: config.configFile ?? false,
       };
+
+      // XXX: Technically, the resolved config should be immutable (final), but
+      // it can be modified, and at least one official plugin does this
+      // (@vitejs/plugin-basic-ssl).
+
+      // Preview modes imply watching.
+      if (!config.build.watch) config.build.watch = {};
+
+      // XXX: Default the build delay to 750ms to prevent ENOENT errors
+      // on page reloads
+      if (config.build.watch.buildDelay == null) config.build.watch.buildDelay = 750;
     },
     buildStart() {
       if (clearScreen) {
