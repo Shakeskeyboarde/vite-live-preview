@@ -97,7 +97,7 @@ By default, the plugin is automatically enabled when the mode starts with `previ
 
 ## Debugging
 
-the `--debug` or `--debug=live-preview` flag can be used to enable debug logging.
+the `--debug live-preview` flag can be used to enable debug logging for the plugin.
 
 ## The Problem
 
