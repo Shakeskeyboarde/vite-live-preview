@@ -16,11 +16,13 @@ socket.addEventListener('message', (event) => {
     const message = JSON.parse(event.data);
 
     if (message?.type === 'page-reload') {
+      // Echo the message back so the server for debugging purposes.
+      socket.send(JSON.stringify({ type: 'page-reload' }));
       window.location.reload();
     }
   }
   catch {
-    // Ignore invalid messages.
+    // ignore invalid messages
   }
 });
 
@@ -45,6 +47,8 @@ socket.addEventListener('close', (event) => {
 async function ping() {
   // eslint-disable-next-line no-constant-condition
   while (true) {
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
     try {
       // Fetch should reject a networking error if the server is down.
       await fetch(pingUrl, {
@@ -59,8 +63,7 @@ async function ping() {
       return;
     }
     catch {
-      // Ping failed. Wait for a second and try again.
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // ping failed
     }
   }
 };

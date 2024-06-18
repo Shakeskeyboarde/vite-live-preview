@@ -10,6 +10,7 @@ Vite build with preview.
   - [Plugin Options](#plugin-options)
     - [`reload: boolean`](#reload-boolean)
     - [`enable: boolean`](#enable-boolean)
+- [Debugging](#debugging)
 - [The Problem](#the-problem)
   - [Related Github Issues](#related-github-issues)
 
@@ -68,11 +69,11 @@ import livePreview from 'vite-live-preview'
 
 export default defineConfig({
   plugins: [livePreview({ /* options */ })]
-  preview: { /* (optional) configure the plugin server. */ }
+  preview: { /* (optional) configure the preview server. */ }
 })
 ```
 
-The plugin only takes effect when building with the `mode` set to `preview` or `preview:*` (eg. `preview:production`).
+Start a build in preview mode. A preview mode is any mode string that begins with `preview`.
 
 ```sh
 vite build --mode=preview
@@ -92,7 +93,11 @@ Allow or disable automatic browser reloading on rebuild. The default is true. Se
 
 Forcibly enable or disable the plugin.
 
-By default, the plugin is automatically enabled when the mode is `preview` or `preview:*`. If this option is set to true, then the plugin is enabled even if a preview mode is not present. If this option is false, then the plugin is disabled even if a preview mode is present.
+By default, the plugin is automatically enabled when the mode starts with `preview`. If this option is set to true, then the plugin is enabled even if a preview mode is not present. If this option is false, then the plugin is disabled even if a preview mode is present.
+
+## Debugging
+
+the `--debug` or `--debug=live-preview` flag can be used to enable debug logging.
 
 ## The Problem
 

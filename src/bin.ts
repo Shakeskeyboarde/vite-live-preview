@@ -2,7 +2,7 @@ import { createCommand, InvalidArgumentError } from '@commander-js/extra-typings
 import { build, type InlineConfig, loadConfigFromFile, type LogLevel, mergeConfig } from 'vite';
 
 import { description, version } from './bin.data.js';
-import plugin from './plugin.js';
+import plugin from './plugin-build.js';
 
 const cli = createCommand('vite-live-preview')
   .description(description)
