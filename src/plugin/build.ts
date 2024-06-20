@@ -39,12 +39,12 @@ export default ({ reload = true, enable }: PreviewModeOptions = {}): Plugin => {
 
   let logger = createLogger('silent');
   let clearScreen = false;
-  let buildConfig: InlineConfig & { configFile: string | false } | undefined;
-  let previewServer: PreviewServer | undefined;
+  let config: InlineConfig & { configFile: string | false } | undefined;
+  let server: PreviewServer | undefined;
   let error: Error | undefined;
-  let deferredBuild: DeferredPromise<void> | undefined;
-  let deferredRequests: DeferredPromise<void> | undefined;
-  let deferredRequestsDelay: NodeJS.Timeout | undefined;
+  let deferToBuild: DeferredPromise<void> | undefined;
+  let deferToRequests: DeferredPromise<void> | undefined;
+  let deferToRequestsDelay: NodeJS.Timeout | undefined;
   let requestCount = 0;
 
   const debug = createDebugger('live-preview');
@@ -52,28 +52,28 @@ export default ({ reload = true, enable }: PreviewModeOptions = {}): Plugin => {
 
   const plugin: Plugin = {
     name: PLUGIN_NAME,
-    configResolved(config) {
+    configResolved(resolvedConfig) {
       // Disabled if not building (serving).
-      if (config.command !== 'build') return;
+      if (resolvedConfig.command !== 'build') return;
       // Disabled if not explicitly enabled and not a preview mode.
-      if (enable !== true && !config.mode.startsWith('preview')) return;
+      if (enable !== true && !resolvedConfig.mode.startsWith('preview')) return;
       // Disabled if the last plugin with this plugin's name is not this
       // instance of the plugin.
-      if (Array.from(config.plugins).reverse().find((p) => p.name === plugin.name) !== plugin) return;
+      if (Array.from(resolvedConfig.plugins).reverse().find((p) => p.name === plugin.name) !== plugin) return;
 
       debug?.('enabled.');
 
-      logger = config.logger;
-      clearScreen = config.clearScreen !== false;
+      logger = resolvedConfig.logger;
+      clearScreen = resolvedConfig.clearScreen !== false;
 
       // XXX: This is a little confusing, but to get the preview server to
       // start with the "same" config as the build, we have to grab the
       // inline config and the loaded config file (if any) from the build's
       // resolved config. These two pieces are the initial state that
       // resulted in the final build config.
-      buildConfig = {
-        ...config.inlineConfig,
-        configFile: config.configFile ?? false,
+      config = {
+        ...resolvedConfig.inlineConfig,
+        configFile: resolvedConfig.configFile ?? false,
       };
 
       // XXX: Technically, the resolved config should be immutable (final),
@@ -81,16 +81,18 @@ export default ({ reload = true, enable }: PreviewModeOptions = {}): Plugin => {
       // (@vitejs/plugin-basic-ssl).
 
       // Live preview implies watching.
-      config.build.watch ??= {};
+      resolvedConfig.build.watch ??= {};
     },
     async buildStart() {
-      // Delay the build if requests are in progress.
-      await deferredRequests?.promise;
+      if (!config) return;
 
-      if (!deferredBuild) {
-        deferredBuild = defer();
+      // Delay the build if requests are in progress.
+      await deferToRequests?.promise;
+
+      if (!deferToBuild) {
+        deferToBuild = defer();
         debug?.('requests paused.');
-        void deferredBuild.promise.then(() => debug?.('requests resumed.'));
+        void deferToBuild.promise.then(() => debug?.('requests resumed.'));
       }
 
       if (clearScreen) {
@@ -100,28 +102,32 @@ export default ({ reload = true, enable }: PreviewModeOptions = {}): Plugin => {
       }
     },
     buildEnd(buildError) {
+      if (!config) return;
+
       // Save build errors to be displayed by the preview server.
       error = buildError;
     },
     async closeBundle() {
-      const buildPromise = deferredBuild?.promise;
+      if (!config) return;
 
-      deferredBuild?.resolve();
-      deferredBuild = undefined;
+      const buildPromise = deferToBuild?.promise;
+
+      deferToBuild?.resolve();
+      deferToBuild = undefined;
 
       // XXX: Make sure we don't continue until all build awaits are resolved.
       await buildPromise;
 
       // Signal the preview server to reload.
-      if (previewServer) {
+      if (server) {
         if (reload) {
-          previewServer.config.logger.info(chalk.green('page-reload'), { timestamp: true });
+          server.config.logger.info(chalk.green('page-reload'), { timestamp: true });
         }
 
         if (clearScreen) {
-          previewServer.config.logger.info(chalk.green('preview server ready'), { timestamp: true });
+          server.config.logger.info(chalk.green('preview server ready'), { timestamp: true });
           console.log();
-          previewServer.printUrls();
+          server.printUrls();
         }
 
         if (reload) {
@@ -135,21 +141,19 @@ export default ({ reload = true, enable }: PreviewModeOptions = {}): Plugin => {
         return;
       }
 
-      if (!buildConfig) return;
-
       const onConnect = (socket: WebSocket): void => {
         sockets.add(socket);
         socket.on('close', () => sockets.delete(socket));
       };
 
       const onRequest = (): (() => void) => {
-        clearTimeout(deferredRequestsDelay);
+        clearTimeout(deferToRequestsDelay);
         requestCount++;
 
-        if (!deferredRequests) {
-          deferredRequests = defer();
+        if (!deferToRequests) {
+          deferToRequests = defer();
           debug?.('building paused.');
-          void deferredRequests.promise.then(() => debug?.('building resumed.'));
+          void deferToRequests.promise.then(() => debug?.('building resumed.'));
         }
 
         return () => {
@@ -158,10 +162,10 @@ export default ({ reload = true, enable }: PreviewModeOptions = {}): Plugin => {
           if (requestCount === 0) {
             // Wait a short time to see if any new requests come in,
             // before resolving the request promise.
-            clearTimeout(deferredRequestsDelay);
-            deferredRequestsDelay = setTimeout(() => {
-              deferredRequests?.resolve();
-              deferredRequests = undefined;
+            clearTimeout(deferToRequestsDelay);
+            deferToRequestsDelay = setTimeout(() => {
+              deferToRequests?.resolve();
+              deferToRequests = undefined;
             }, 500).unref();
           }
         };
@@ -172,22 +176,22 @@ export default ({ reload = true, enable }: PreviewModeOptions = {}): Plugin => {
       };
 
       const getBuildPromise = async (): Promise<void> => {
-        await deferredBuild?.promise;
+        await deferToBuild?.promise;
       };
 
-      previewServer = await preview({
+      server = await preview({
         // Extend the build config, just adding one plugin the must precede all
         // other plugins.
-        ...buildConfig,
+        ...config,
         plugins: [
           pluginServe({ onConnect, onRequest, getError, getBuildPromise }),
-          ...buildConfig.plugins ?? [],
+          ...config.plugins ?? [],
         ],
       });
 
-      previewServer.config.logger.info(chalk.green('preview server started'), { timestamp: true });
+      server.config.logger.info(chalk.green('preview server started'), { timestamp: true });
       console.log();
-      previewServer.printUrls();
+      server.printUrls();
     },
   };
 
