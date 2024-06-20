@@ -4,12 +4,12 @@ Vite build with preview.
 
 - [Getting Started](#getting-started)
 - [CLI](#cli)
-  - [CLI Options](#cli-options)
-    - [`--reload [boolean]`](#--reload-boolean)
+  - [Option `--reload [boolean]`](#option---reload-boolean)
+  - [Vite Preview Options](#vite-preview-options)
 - [Plugin](#plugin)
-  - [Plugin Options](#plugin-options)
-    - [`reload: boolean`](#reload-boolean)
-    - [`enable: boolean`](#enable-boolean)
+  - [Option `reload: boolean`](#option-reload-boolean)
+  - [Option `enable: boolean`](#option-enable-boolean)
+- [Building for Development](#building-for-development)
 - [Debugging](#debugging)
 - [The Problem](#the-problem)
   - [Related Github Issues](#related-github-issues)
@@ -49,15 +49,15 @@ The command can be run with `npx` if you prefer not to add it as a dependency.
 npx vite-live-preview
 ```
 
-### CLI Options
-
-All Vite [preview command options](https://vitejs.dev/guide/cli#vite-preview) are supported, in addition to the following options.
-
-#### `--reload [boolean]`
+### Option `--reload [boolean]`
 
 Allow or disable automatic browser reloading on rebuild. The default is true.
 
 Use `--reload false` to disable automatic reloading. Manually reloading the page after a rebuild will still show the updated content.
+
+### Vite Preview Options
+
+All Vite [preview command options](https://vitejs.dev/guide/cli#vite-preview) are also supported.
 
 ## Plugin
 
@@ -81,19 +81,29 @@ vite build --mode=preview
 
 > Note: A preview mode implies watching, so the Vite `--watch` flag is optional.
 
-### Plugin Options
-
-The plugin accepts the following options.
-
-#### `reload: boolean`
+### Option `reload: boolean`
 
 Allow or disable automatic browser reloading on rebuild. The default is true. Set it to false to require manual browser reloading.
 
-#### `enable: boolean`
+### Option `enable: boolean`
 
 Forcibly enable or disable the plugin.
 
 By default, the plugin is automatically enabled when the mode starts with `preview`. If this option is set to true, then the plugin is enabled even if a preview mode is not present. If this option is false, then the plugin is disabled even if a preview mode is present.
+
+## Building for Development
+
+Vite's build command, both in the CLI and the JavaScript API, is biased towards building for production. This means the live preview will also represent a production build by default.
+
+To live preview a development build, set the `NODE_ENV=development` environment variable. This can be set in your shell before starting the live preview, or it can be added to a Vite [environment file](https://vitejs.dev/guide/env-and-mode.html#env-files).
+
+Example: `.env.preview`
+
+```
+NODE_ENV=development
+```
+
+With the above environment file, running `vite build --mode=preview` or `vite-live-preview` will build the project in development mode. You will need to add other environment files if you set the mode to something other than `preview`.
 
 ## Debugging
 
