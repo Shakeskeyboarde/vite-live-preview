@@ -97,7 +97,10 @@ By default, the plugin is automatically enabled when the mode starts with `previ
 
 ## Debugging
 
-the `--debug live-preview` flag can be used to enable debug logging for the plugin.
+The vite `-d, --debug [feat]` option is supported, and the following feature names are available for this tool.
+
+- `live-preview`: General debugging information.
+- `live-preview-request`: Log preview server requests.
 
 ## The Problem
 

@@ -1,8 +1,7 @@
 import { createCommand, InvalidArgumentError } from '@commander-js/extra-typings';
-import { build, type InlineConfig, loadConfigFromFile, type LogLevel, mergeConfig } from 'vite';
+import type { LogLevel } from 'vite';
 
 import { description, version } from './bin.data.js';
-import plugin from './plugin-build.js';
 
 const cli = createCommand('vite-live-preview')
   .description(description)
@@ -28,16 +27,9 @@ const cli = createCommand('vite-live-preview')
 
 const [root] = cli.processedArgs;
 const {
-  config: configFile,
-  logLevel,
-  clearScreen,
   debug,
   filter,
-  mode = 'development',
-  base,
-  outDir,
-  reload,
-  ...preview
+  ...options
 } = cli.opts();
 
 if (debug) {
@@ -52,28 +44,11 @@ if (debug) {
   }
 }
 
-// Load the configuration manually so that the `env` is correct.
-const config: InlineConfig = mergeConfig<InlineConfig, InlineConfig>(
-  await loadConfigFromFile(
-    { command: 'build', mode, isPreview: true, isSsrBuild: false },
-    configFile,
-    root,
-    logLevel,
-  ).then((value) => value?.config ?? {}),
-  {
-    plugins: [plugin({ enable: true, reload })],
-    root,
-    configFile: false,
-    logLevel,
-    clearScreen,
-    mode,
-    base,
-    build: { outDir },
-    preview,
-  },
-);
+// XXX: Lazy load the main function so that environment variables which are
+// greedily evaluated can take effect.
+const { main } = await import('./main.js');
 
-await build(config);
+await main(root, options);
 
 function parsePortArg(value: string): number {
   const int = Number.parseInt(value, 10);
