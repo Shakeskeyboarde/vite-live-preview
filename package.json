@@ -17,9 +17,10 @@
   ],
   "scripts": {
     "build": "vite build",
+    "tsc": "tsc -p src/tsconfig.json",
     "eslint": "eslint .",
     "depcheck": "depcheck --ignores=typescript",
-    "test": "pnpm eslint --max-warnings=0 && pnpm depcheck",
+    "test": "pnpm tsc --noEmit && pnpm eslint --max-warnings=0 && pnpm depcheck",
     "global-install": "pnpm i -g \"$PWD\""
   },
   "files": [
@@ -43,7 +44,6 @@
     "eslint": "^8",
     "eslint-config-rational": "^5.0.15",
     "typescript": "^5.4.5",
-    "vite-plugin-checker": "^0.6.4",
     "vite-plugin-config-lib": "^0.2.0",
     "vite-plugin-data": "^0.2.5",
     "vite-plugin-dts": "^3.9.1"
