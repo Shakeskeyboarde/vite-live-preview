@@ -1,29 +1,47 @@
 import chalk from 'chalk';
 import defer, { type DeferredPromise } from 'p-defer';
-import { createLogger, type InlineConfig, type Plugin, preview, type PreviewServer } from 'vite';
+import {
+  type ConfigEnv,
+  createLogger,
+  type InlineConfig,
+  loadConfigFromFile,
+  mergeConfig,
+  type Plugin,
+  type PluginOption,
+  preview,
+  type PreviewServer,
+  type UserConfig,
+} from 'vite';
 import { type WebSocket } from 'ws';
 
 import { createDebugger } from '../util/create-debugger.js';
 import pluginServe from './serve.js';
 
-export interface PreviewModeOptions {
+export type LivePreviewConfig =
+  | Omit<UserConfig, 'plugins'>
+  | null
+  | ((config: UserConfig, env: ConfigEnv) => Promise<
+    | Omit<UserConfig, 'plugins'>
+    | null
+    | void
+  > | Omit<UserConfig, 'plugins'> | null | void);
+
+export interface LivePreviewOptions {
   /**
    * Allow or disable automatic browser reloading on rebuild. The default is
    * true.
    */
   readonly reload?: boolean;
   /**
-   * Forcibly enable or disable the plugin.
-   *
-   * By default, the plugin is automatically enabled when the build mode is
-   * `preview` or `preview:*`. If this option is set to true, then the plugin
-   * is enabled even if a preview mode is not present. If this option is false,
-   * then the plugin is disabled even if a preview mode is present.
+   * Configuration that should only be applied to live preview builds. This is
+   * deeply merged into your regular Vite configuration.
    */
-  readonly enable?: boolean;
+  readonly config?: LivePreviewConfig;
+  /**
+   * Plugins that should only be applied to the preview server.
+   */
+  readonly plugins?: PluginOption[];
 }
-
-const PLUGIN_NAME = 'live-preview-build';
 
 /**
  * Start a preview server if the build mode is `preview` or `preview:<mode>`.
@@ -31,60 +49,77 @@ const PLUGIN_NAME = 'live-preview-build';
  * **NOTE:** This plugin forces `build.watch` when enabled, so the Vite build
  * `--watch` option is optional/implied.
  */
-export default ({ reload = true, enable }: PreviewModeOptions = {}): Plugin => {
-  if (enable === false) {
-    // Return a dummy plugin that does nothing if forcibly disabled.
-    return { name: PLUGIN_NAME };
-  }
+export default ({ reload = true, config, plugins }: LivePreviewOptions = {}): Plugin => {
+  let enabled = false;
 
+  // resolved config
   let logger = createLogger('silent');
   let clearScreen = false;
-  let config: InlineConfig & { configFile: string | false } | undefined;
+  let mode = 'preview';
+  let configFile: string | undefined;
+  let inlineConfig: InlineConfig = {};
+
+  // runtime state
   let server: PreviewServer | undefined;
   let error: Error | undefined;
   let deferToBuild: DeferredPromise<void> | undefined;
   let deferToRequests: DeferredPromise<void> | undefined;
   let deferToRequestsDelay: NodeJS.Timeout | undefined;
-  let requestCount = 0;
+  let activeRequestCount = 0;
 
   const debug = createDebugger('live-preview');
   const sockets = new Set<WebSocket>();
 
   const plugin: Plugin = {
-    name: PLUGIN_NAME,
+    name: 'live-preview-build',
+    config(partialConfig, env) {
+      // Disabled for non-build commands (ie. serve).
+      if (env.command !== 'build') return;
+      // Disabled if not a preview mode.
+      if (!env.mode.startsWith('preview')) return;
+
+      enabled = true;
+
+      // Apply the live preview only build configuration.
+      return typeof config === 'function'
+        ? config(partialConfig, env)
+        : config;
+    },
     configResolved(resolvedConfig) {
-      // Disabled if not building (serving).
-      if (resolvedConfig.command !== 'build') return;
-      // Disabled if not explicitly enabled and not a preview mode.
-      if (enable !== true && !resolvedConfig.mode.startsWith('preview')) return;
-      // Disabled if the last plugin with this plugin's name is not this
-      // instance of the plugin.
-      if (Array.from(resolvedConfig.plugins).reverse().find((p) => p.name === plugin.name) !== plugin) return;
+      if (!enabled) return;
+
+      // Disable if the last plugin with this plugin's name is not this
+      // instance of the plugin. The override configuration has already been
+      // applied, and that's fine. But, we only want one preview server, so all
+      // subsequent hooks should be no-ops.
+      if (Array.from(resolvedConfig.plugins).reverse().find((p) => p.name === plugin.name) !== plugin) {
+        enabled = false;
+        return;
+      }
 
       debug?.('enabled.');
 
+      // Save the resolved config for later use.
       logger = resolvedConfig.logger;
       clearScreen = resolvedConfig.clearScreen !== false;
-
-      // XXX: This is a little confusing, but to get the preview server to
-      // start with the "same" config as the build, we have to grab the
-      // inline config and the loaded config file (if any) from the build's
-      // resolved config. These two pieces are the initial state that
-      // resulted in the final build config.
-      config = {
+      mode = resolvedConfig.mode;
+      configFile = resolvedConfig.configFile;
+      inlineConfig = {
         ...resolvedConfig.inlineConfig,
-        configFile: resolvedConfig.configFile ?? false,
+        // XXX: Inline (JavaScript API) plugins are unsafe to reuse in the
+        // preview command. This is a current limitation of Vite.
+        plugins: undefined,
       };
 
+      // Live preview implies watching.
+      //
       // XXX: Technically, the resolved config should be immutable (final),
       // but it can be modified, and at least one official plugin does this
       // (@vitejs/plugin-basic-ssl).
-
-      // Live preview implies watching.
       resolvedConfig.build.watch ??= {};
     },
     async buildStart() {
-      if (!config) return;
+      if (!enabled) return;
 
       // Delay the build if requests are in progress.
       await deferToRequests?.promise;
@@ -102,20 +137,20 @@ export default ({ reload = true, enable }: PreviewModeOptions = {}): Plugin => {
       }
     },
     buildEnd(buildError) {
-      if (!config) return;
+      if (!enabled) return;
 
       // Save build errors to be displayed by the preview server.
       error = buildError;
     },
     async closeBundle() {
-      if (!config) return;
+      if (!enabled) return;
 
       const buildPromise = deferToBuild?.promise;
 
       deferToBuild?.resolve();
       deferToBuild = undefined;
 
-      // XXX: Make sure we don't continue until all build awaits are resolved.
+      // Continue after any other async tasks which were awaiting the promise.
       await buildPromise;
 
       // Signal the preview server to reload.
@@ -148,7 +183,7 @@ export default ({ reload = true, enable }: PreviewModeOptions = {}): Plugin => {
 
       const onRequest = (): (() => void) => {
         clearTimeout(deferToRequestsDelay);
-        requestCount++;
+        activeRequestCount++;
 
         if (!deferToRequests) {
           deferToRequests = defer();
@@ -157,9 +192,9 @@ export default ({ reload = true, enable }: PreviewModeOptions = {}): Plugin => {
         }
 
         return () => {
-          requestCount = Math.max(0, requestCount - 1);
+          activeRequestCount = Math.max(0, activeRequestCount - 1);
 
-          if (requestCount === 0) {
+          if (activeRequestCount === 0) {
             // Wait a short time to see if any new requests come in,
             // before resolving the request promise.
             clearTimeout(deferToRequestsDelay);
@@ -179,16 +214,43 @@ export default ({ reload = true, enable }: PreviewModeOptions = {}): Plugin => {
         await deferToBuild?.promise;
       };
 
-      server = await preview({
-        // Extend the build config, just adding one plugin the must precede all
-        // other plugins.
-        ...config,
-        plugins: [
-          pluginServe({ onConnect, onRequest, getError, getBuildPromise }),
-          ...config.plugins ?? [],
-        ],
-      });
+      // Preload the preview config instead of letting the `preview()` function
+      // load it. This is necessary so that the live preview plugin can be
+      // injected as the first plugin.
+      let previewConfig: InlineConfig = configFile
+        ? await loadConfigFromFile(
+          { command: 'serve', mode, isPreview: true, isSsrBuild: false },
+          configFile,
+          inlineConfig.root,
+          inlineConfig.logLevel,
+        ).then((result) => result?.config ?? {})
+        : {};
 
+      // Merge the inline config back into the loaded preview config, because
+      // that's what `preview()` would do if it were allowed to load the config
+      // file (disallowed below). You can think of the inline config as similar
+      // to command line options, which override file config options. This is
+      // in fact how the Vite CLI uses the JavaScript API's inline config.
+      previewConfig = mergeConfig(previewConfig, inlineConfig);
+
+      // The config file has already been loaded, so don't let the `preview()`
+      // function load it again.
+      previewConfig.configFile = false;
+
+      // The preview command is not allowed to clear the screen. The build
+      // command should do it if necessary.
+      previewConfig.clearScreen = false;
+
+      // Force the live preview plugin to be the first plugin so that it can
+      // add connect middleware to the preview server first.
+      // eslint-disable-next-line @typescript-eslint/no-floating-promises
+      previewConfig.plugins = [
+        pluginServe({ onConnect, onRequest, getError, getBuildPromise }),
+        ...(previewConfig.plugins ?? []),
+        ...(plugins ?? []),
+      ];
+
+      server = await preview(previewConfig);
       server.config.logger.info(chalk.green('preview server started'), { timestamp: true });
       console.log();
       server.printUrls();

@@ -1,7 +1,7 @@
 {
   "name": "vite-live-preview",
-  "version": "0.1.14",
-  "description": "Vite preview watch mode.",
+  "version": "0.2.0",
+  "description": "Vite build with preview.",
   "license": "ISC",
   "repository": {
     "type": "git",

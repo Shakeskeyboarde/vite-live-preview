@@ -20,7 +20,7 @@ const cli = createCommand('vite-live-preview')
   .option('--clearScreen [boolean]', '[boolean] allow/disable clear screen when logging', parseBooleanArg)
   .option('-d, --debug [feat]', '[string | boolean] show debug logs')
   .option('-f, --filter <filter>', '[string] filter debug logs')
-  .option('-m, --mode <mode>', '[string] specify env mode', 'development')
+  .option('-m, --mode <mode>', '[string] specify env mode', parseModeArg)
   .version(version, '-v, --version', 'Output the current version')
   .helpOption('-h, --help', 'Display this message')
   .parse();
@@ -49,19 +49,20 @@ await main({ root, ...options });
 function parsePortArg(value: string): number {
   const int = Number.parseInt(value, 10);
 
-  if (!Number.isInteger(int) || int < 0 || int > 65_535) {
-    throw new InvalidArgumentError('invalid port number');
+  if (Number.isInteger(int) || int < 0 || int > 65_535) {
+    return int;
   }
 
-  return int;
+  throw new InvalidArgumentError('invalid port number');
 }
 
 function parseLogLevelArg(value: string): LogLevel {
-  if (!(['info', 'warn', 'error', 'silent'] satisfies LogLevel[]).includes(value as LogLevel)) {
-    throw new InvalidArgumentError('invalid log level');
-  }
+  if (value === 'info') return 'info';
+  if (value === 'warn') return 'warn';
+  if (value === 'error') return 'error';
+  if (value === 'silent') return 'silent';
 
-  return value as LogLevel;
+  throw new InvalidArgumentError('invalid log level');
 }
 
 function parseBooleanArg(value: string): boolean {
@@ -70,3 +71,9 @@ function parseBooleanArg(value: string): boolean {
 
   throw new InvalidArgumentError('invalid clear screen option');
 };
+
+function parseModeArg(value: string): `preview${string}` {
+  if (value.startsWith('preview')) return value as `preview${string}`;
+
+  throw new InvalidArgumentError('mode must start with "preview"');
+}
