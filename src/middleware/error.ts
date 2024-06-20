@@ -27,15 +27,15 @@ export default ({ base, getError }: Options): Connect.NextHandleFunction => {
 
     if (!error) return next();
 
-    const errorMessage = ansiHtml(htmlEscape(error.message));
-    const errorHtml = TEMPLATE_ERROR_HTML
+    const message = ansiHtml(htmlEscape(error.message));
+    const html = TEMPLATE_ERROR_HTML
       .replace(/(?=<\/head>)|$/iu, `<script crossorigin="" src=${clientSrc}></script>\n`)
-      .replace(/(?=<\/body>)|$/iu, `<pre class="error"><code>${errorMessage}</code></pre>\n`);
+      .replace(/(?=<\/body>)|$/iu, `<pre class="error"><code>${message}</code></pre>\n`);
 
     res.statusCode = 500;
     res.setHeader('Content-Type', 'text/html');
-    res.setHeader('Content-Length', Buffer.byteLength(errorHtml, 'utf8'));
-    res.end(errorHtml);
+    res.setHeader('Content-Length', Buffer.byteLength(html, 'utf8'));
+    res.end(html);
     debug?.(`served error page for "${req.url}".`);
   };
 };

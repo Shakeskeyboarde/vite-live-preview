@@ -16,16 +16,16 @@ export const CLIENT_SCRIPT_NAME = 'vite-live-preview/client.ts';
  */
 export default ({ base }: Options): Connect.NextHandleFunction => {
   const debug = createDebugger('live-preview');
-  const clientScript = TEMPLATE_CLIENT_SCRIPT.replace(/(?<=const base *= *)'\/'/u, JSON.stringify(base));
-  const clientScriptLength = Buffer.byteLength(clientScript, 'utf8');
-  const clientScriptRoute = path.posix.join(base, CLIENT_SCRIPT_NAME);
+  const script = TEMPLATE_CLIENT_SCRIPT.replace(/(?<=const base *= *)'\/'/u, JSON.stringify(base));
+  const length = Buffer.byteLength(script, 'utf8');
+  const route = path.posix.join(base, CLIENT_SCRIPT_NAME);
 
   return (req, res, next) => {
-    if (req.url !== clientScriptRoute) return next();
+    if (req.url !== route) return next();
 
     res.setHeader('Content-Type', 'text/javascript');
-    res.setHeader('Content-Length', clientScriptLength);
-    res.end(clientScript);
+    res.setHeader('Content-Length', length);
+    res.end(script);
     debug?.('served client script.');
   };
 };

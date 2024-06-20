@@ -41,13 +41,14 @@ export default ({ onConnect, onRequest, getError, getBuildPromise }: Options): P
       // Important that this plugin's middleware be injected into the preview
       // server first.
       order: 'pre',
-      handler(self) {
+      handler({ httpServer, middlewares, config }) {
+        const { base } = config;
         const websocketServer = new WebSocketServer({
           // XXX: Could be an HTTP/2 server. Technically, websockets
           // (specifically, the upgrade request) is not supported over HTTP/2.
           // But, the NodeJS HTTP/2 server allows HTTP/1 requests (TLS ALP
           // negotiation), so websockets still work.
-          server: self.httpServer as http.Server,
+          server: httpServer as http.Server,
         });
 
         websocketServer.on('connection', (socket) => {
@@ -71,14 +72,14 @@ export default ({ onConnect, onRequest, getError, getBuildPromise }: Options): P
           onConnect(socket);
         });
 
-        self.middlewares
+        middlewares
           .use(middlewareLog())
           .use(middlewarePing())
-          .use(middlewareClient({ base: self.config.base }))
+          .use(middlewareClient({ base }))
           .use(middlewareDelay({ getPromise: getBuildPromise }))
           .use(middlewareLifecycle({ onRequest }))
-          .use(middlewareError({ base: self.config.base, getError }))
-          .use(middlewareInject({ base: self.config.base }));
+          .use(middlewareError({ base, getError }))
+          .use(middlewareInject({ base }));
       },
     },
   };
