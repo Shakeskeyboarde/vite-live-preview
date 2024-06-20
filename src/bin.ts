@@ -26,11 +26,7 @@ const cli = createCommand('vite-live-preview')
   .parse();
 
 const [root] = cli.processedArgs;
-const {
-  debug,
-  filter,
-  ...options
-} = cli.opts();
+const { debug, filter, ...options } = cli.opts();
 
 if (debug) {
   const debugValue = typeof debug === 'string'
@@ -38,17 +34,17 @@ if (debug) {
     : 'vite:*';
 
   process.env.DEBUG = `${process.env.DEBUG ? process.env.DEBUG + ',' : ''}${debugValue}`;
+}
 
-  if (filter) {
-    process.env.VITE_DEBUG_FILTER = filter;
-  }
+if (filter) {
+  process.env.VITE_DEBUG_FILTER = filter;
 }
 
 // XXX: Lazy load the main function so that environment variables which are
 // greedily evaluated can take effect.
 const { main } = await import('./main.js');
 
-await main(root, options);
+await main({ root, ...options });
 
 function parsePortArg(value: string): number {
   const int = Number.parseInt(value, 10);

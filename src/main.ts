@@ -1,13 +1,14 @@
-import { build, type InlineConfig, loadConfigFromFile, type LogLevel, mergeConfig } from 'vite';
+import { build, type LogLevel } from 'vite';
 
 import plugin from './plugin/build.js';
 
 interface Options {
-  readonly mode?: string;
   readonly config?: string;
+  readonly root?: string;
   readonly logLevel?: LogLevel;
   readonly reload?: boolean;
   readonly clearScreen?: boolean;
+  readonly mode?: string;
   readonly base?: string;
   readonly outDir?: string;
   readonly host?: string | true;
@@ -16,9 +17,10 @@ interface Options {
   readonly open?: string | true;
 }
 
-export const main = async (root: string | undefined, {
+export const main = async ({
   config: configFile,
-  mode = 'development',
+  root,
+  mode,
   logLevel,
   reload,
   clearScreen,
@@ -26,26 +28,18 @@ export const main = async (root: string | undefined, {
   outDir,
   ...preview
 }: Options): Promise<void> => {
-  // Load the configuration manually so that the `env` is correct.
-  const config: InlineConfig = mergeConfig<InlineConfig, InlineConfig>(
-    await loadConfigFromFile(
-      { command: 'build', mode, isPreview: true, isSsrBuild: false },
-      configFile,
-      root,
-      logLevel,
-    ).then((value) => value?.config ?? {}),
-    {
-      root,
-      configFile: false,
-      plugins: [plugin({ enable: true, reload })],
-      logLevel,
-      clearScreen,
-      mode,
-      base,
-      build: { outDir },
-      preview,
-    },
-  );
-
-  await build(config);
+  await build({
+    configFile,
+    root,
+    logLevel,
+    plugins: [plugin({ enable: true, reload })],
+    clearScreen,
+    // XXX: Forcing the inline config mode to be defined means that any mode
+    // set in a config file will be ignored. While this is not ideal, it is
+    // consistent with using the plugin with preview mode detection.
+    mode: mode || 'preview',
+    base,
+    build: { outDir },
+    preview,
+  });
 };
