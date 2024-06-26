@@ -63,6 +63,7 @@ export default ({ reload = true, config, plugins }: LivePreviewOptions = {}): Pl
   let server: PreviewServer | undefined;
   let error: Error | undefined;
   let deferToBuild: DeferredPromise<void> | undefined;
+  let reloadDelay: NodeJS.Timeout | undefined;
   let deferToRequests: DeferredPromise<void> | undefined;
   let deferToRequestsDelay: NodeJS.Timeout | undefined;
   let activeRequestCount = 0;
@@ -121,6 +122,8 @@ export default ({ reload = true, config, plugins }: LivePreviewOptions = {}): Pl
     async buildStart() {
       if (!enabled) return;
 
+      clearTimeout(reloadDelay);
+
       // Delay the build if requests are in progress.
       await deferToRequests?.promise;
 
@@ -166,11 +169,14 @@ export default ({ reload = true, config, plugins }: LivePreviewOptions = {}): Pl
         }
 
         if (reload) {
-          debug?.(`sending page-reload to ${sockets.size} clients...`);
-          sockets.forEach((socket) => {
-            socket.send(JSON.stringify({ type: 'page-reload' }));
-            debug?.(`sent page-reload.`);
-          });
+          clearTimeout(reloadDelay);
+          reloadDelay = setTimeout(() => {
+            debug?.(`sending page-reload to ${sockets.size} clients...`);
+            sockets.forEach((socket) => {
+              socket.send(JSON.stringify({ type: 'page-reload' }));
+              debug?.(`sent page-reload.`);
+            });
+          }, 1000).unref();
         }
 
         return;

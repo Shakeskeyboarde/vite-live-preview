@@ -21,11 +21,17 @@ export default ({ base, getError }: Options): Connect.NextHandleFunction => {
   const clientSrc = JSON.stringify(path.posix.join(base, CLIENT_SCRIPT_NAME));
 
   return (req, res, next) => {
-    if (!req.headers.accept?.includes('html')) return next();
-
     const error = getError();
 
     if (!error) return next();
+
+    if (!req.headers.accept?.includes('html')) {
+      res.statusCode = 500;
+      res.end();
+      debug?.(`served empty error response for "${req.url}".`);
+
+      return;
+    }
 
     const message = ansiHtml(htmlEscape(error.message));
     const html = TEMPLATE_ERROR_HTML
