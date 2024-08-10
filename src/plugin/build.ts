@@ -255,10 +255,54 @@ export default ({ reload = true, config, plugins }: LivePreviewOptions = {}): Pl
         ...(plugins ?? []),
       ];
 
-      server = await preview(previewConfig);
-      server.config.logger.info(chalk.green('preview server started'), { timestamp: true });
+      let restartCount = 0;
+
+      const createPreviewServer = async (): Promise<void> => {
+        const isRestart = Boolean(server);
+
+        if (isRestart) {
+          ++restartCount;
+        }
+
+        server = await preview(previewConfig);
+        server.config.logger.info(isRestart ? 'server restarted.' + (restartCount > 1 ? chalk.yellow(` (x${restartCount})`) : '') : chalk.green('preview server started'), { timestamp: true });
+
+        if (!isRestart) {
+          console.log();
+          server.printUrls();
+        }
+
+        server.bindCLIShortcuts({
+          print: !isRestart,
+          customShortcuts: [
+            {
+              key: 'r',
+              description: 'restart the server',
+              action: async (self) => {
+                await self.close();
+                logger.clearScreen('error');
+                await createPreviewServer();
+              },
+            },
+            {
+              key: 'u',
+              description: 'show server url',
+              action: (self) => {
+                console.log();
+                self.printUrls();
+              },
+            },
+            {
+              key: 'c',
+              description: 'clear console',
+              action: () => logger.clearScreen('error'),
+            },
+          ],
+        });
+      };
+
       console.log();
-      server.printUrls();
+      await createPreviewServer();
     },
   };
 
