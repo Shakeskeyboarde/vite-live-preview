@@ -79,7 +79,7 @@ export default ({ base }: Options): Connect.NextHandleFunction => {
 
         if (injectIndex >= 0) {
           content = text.slice(0, injectIndex);
-          content += `<script crossorigin="" src=${clientSrc}></script>\n`;
+          content += `<script src=${clientSrc}></script>\n`;
           content += text.slice(injectIndex);
           res.setHeader('Content-Length', Buffer.byteLength(content, 'utf8'));
           debug?.(`injected client script into "${req.url}".`);
