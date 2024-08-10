@@ -20,7 +20,7 @@ const cli = createCommand('vite-live-preview')
   .option('--clearScreen [boolean]', '[boolean] allow/disable clear screen when logging', parseBooleanArg)
   .option('-d, --debug [feat]', '[string | boolean] show debug logs')
   .option('-f, --filter <filter>', '[string] filter debug logs')
-  .option('-m, --mode <mode>', '[string] specify env mode', parseModeArg)
+  .option('-m, --mode <mode>', '[string] specify env mode')
   .version(version, '-v, --version', 'Output the current version')
   .helpOption('-h, --help', 'Display this message')
   .parse();
@@ -71,9 +71,3 @@ function parseBooleanArg(value: string): boolean {
 
   throw new InvalidArgumentError('invalid clear screen option');
 };
-
-function parseModeArg(value: string): `preview${string}` {
-  if (value.startsWith('preview')) return value as `preview${string}`;
-
-  throw new InvalidArgumentError('mode must start with "preview"');
-}

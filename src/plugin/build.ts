@@ -32,16 +32,20 @@ export interface LivePreviewOptions {
    * true.
    */
   readonly reload?: boolean;
+
   /**
    * Configuration that should only be applied to live preview builds. This is
    * deeply merged into your regular Vite configuration.
    */
   readonly config?: LivePreviewConfig;
+
   /**
    * Plugins that should only be applied to the preview server.
    */
   readonly plugins?: PluginOption[];
 }
+
+const isWatchMode = process.argv.includes('--watch') || process.argv.includes('-w');
 
 /**
  * Start a preview server if the build mode is `preview` or `preview:<mode>`.
@@ -76,8 +80,8 @@ export default ({ reload = true, config, plugins }: LivePreviewOptions = {}): Pl
     config(partialConfig, env) {
       // Disabled for non-build commands (ie. serve).
       if (env.command !== 'build') return;
-      // Disabled if not a preview mode.
-      if (!env.mode.startsWith('preview')) return;
+      // Disabled if not file watching (or using a deprecated preview mode).
+      if (!partialConfig.build?.watch && !isWatchMode && !env.mode.startsWith('preview')) return;
 
       enabled = true;
 
@@ -159,13 +163,8 @@ export default ({ reload = true, config, plugins }: LivePreviewOptions = {}): Pl
       // Signal the preview server to reload.
       if (server) {
         if (reload) {
-          server.config.logger.info(chalk.green('page-reload'), { timestamp: true });
-        }
-
-        if (clearScreen) {
-          server.config.logger.info(chalk.green('preview server ready'), { timestamp: true });
           console.log();
-          server.printUrls();
+          server.config.logger.info(chalk.green('page-reload'), { timestamp: true });
         }
 
         if (reload) {

@@ -8,7 +8,7 @@ interface Options {
   readonly logLevel?: LogLevel;
   readonly reload?: boolean;
   readonly clearScreen?: boolean;
-  readonly mode?: `preview${string}`;
+  readonly mode?: string;
   readonly base?: string;
   readonly outDir?: string;
   readonly host?: string | true;
@@ -37,7 +37,7 @@ export const main = async ({
     clearScreen,
     mode,
     base,
-    build: { outDir },
+    build: { outDir, watch: {} },
     preview,
   };
 
