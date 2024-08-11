@@ -20,13 +20,13 @@ Vite build with preview.
 
 First, please understand that live preview _does not support HMR._ If you want to use HMR, you'll need to stick to the Vite dev server. This plugin starts a preview server when building the project with file watching. The preview server is augmented to reload the browser on rebuild.
 
-Install the package in your project.
+Install this package (and its Vite peer dependency) in your project.
 
 ```sh
-npm install --save-dev vite-live-preview
+npm install --save-dev vite vite-live-preview
 ```
 
-Once installed, you can either use the [CLI](#cli) or the [plugin](#plugin).
+Once installed, you can either use the [plugin](#plugin) or the [CLI](#cli).
 
 ## Plugin
 
@@ -37,18 +37,36 @@ import { defineConfig } from 'vite'
 import livePreview from 'vite-live-preview'
 
 export default defineConfig({
-  plugins: [livePreview({ /* (optional) plugin config */ })]
-  preview: { /* (optional) preview server config */ }
+  plugins: [livePreview({ /* (optional) plugin config */ })],
+  preview: { /* (optional) preview server config */ },
 })
 ```
 
 Start a build with file watching.
 
 ```sh
-vite build --watch
+npx vite build --watch
 ```
 
 Any build with file watching enabled will start a preview server.
+
+To only start the preview server when building for development, use the following configuration.
+
+```ts
+export default defineConfig((env) => {
+  return {
+    plugins: [
+      env.mode === 'development' && livePreview(),
+    ],
+  },
+});
+```
+
+Now, you would need to add the `--mode=development` option to the build command for the preview server to start.
+
+```sh
+npx vite build --watch --mode=development
+```
 
 > **(Deprecated)** You can also use the `--mode=preview` option instead of `--watch`. Any mode that starts with `preview` will work. This is legacy behavior, and it will stop working in a future release. Building with `--watch` is the recommended way to use this plugin.
 
@@ -67,8 +85,8 @@ livePreview({
       mode: 'development',
       sourcemap: true,
       outDir: 'dist-preview',
-    }
-  }
+    },
+  },
 })
 ```
 
@@ -80,23 +98,7 @@ Plugins in your main (build) configuration are not inherited by the preview serv
 
 ## CLI
 
-Add a `start` script to your `package.json` file.
-
-```json
-{
-  "scripts": {
-    "start": "vite-live-preview"
-  }
-}
-```
-
 Start the live preview.
-
-```sh
-npm start
-```
-
-The command can also be run with `npx` if you prefer not to add it as a dependency.
 
 ```sh
 npx vite-live-preview

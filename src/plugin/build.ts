@@ -181,6 +181,10 @@ export default ({ reload = true, config, plugins }: LivePreviewOptions = {}): Pl
         return;
       }
 
+      if (mode.startsWith('preview')) {
+        logger.warn(chalk.yellow('[vite-live-preview] Using the --mode=preview* option is deprecated. Use the --watch option instead.'));
+      }
+
       const onConnect = (socket: WebSocket): void => {
         sockets.add(socket);
         socket.on('close', () => sockets.delete(socket));
