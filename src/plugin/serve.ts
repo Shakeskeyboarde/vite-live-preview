@@ -3,10 +3,10 @@ import type http from 'node:http';
 import { type Plugin } from 'vite';
 import { type WebSocket, WebSocketServer } from 'ws';
 
-import middlewareClient from '../middleware/client.js';
+import middlewareInjectInject from '../middleware/client-inject.js';
+import middlewareClientRoute from '../middleware/client-route.js';
 import middlewareDelay from '../middleware/delay.js';
 import middlewareError from '../middleware/error.js';
-import middlewareInject from '../middleware/inject.js';
 import middlewareLifecycle from '../middleware/lifecycle.js';
 import middlewareLog from '../middleware/log.js';
 import middlewarePing from '../middleware/ping.js';
@@ -75,11 +75,11 @@ export default ({ onConnect, onRequest, getError, getBuildPromise }: Options): P
         middlewares
           .use(middlewareLog())
           .use(middlewarePing())
-          .use(middlewareClient({ base }))
+          .use(middlewareClientRoute({ base }))
           .use(middlewareDelay({ getPromise: getBuildPromise }))
           .use(middlewareLifecycle({ onRequest }))
-          .use(middlewareError({ base, getError }))
-          .use(middlewareInject({ base }));
+          .use(middlewareInjectInject({ base }))
+          .use(middlewareError({ getError }));
       },
     },
   };

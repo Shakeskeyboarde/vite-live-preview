@@ -3,7 +3,7 @@ import path from 'node:path';
 import { type Connect } from 'vite';
 
 import { createDebugger } from '../util/create-debugger.js';
-import { CLIENT_SCRIPT_NAME } from './client.js';
+import { CLIENT_SCRIPT_NAME } from './client-route.js';
 
 interface Options {
   readonly base: string;
