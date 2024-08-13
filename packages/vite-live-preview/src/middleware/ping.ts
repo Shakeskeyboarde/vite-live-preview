@@ -7,7 +7,7 @@ const PING_ACCEPT_HEADER = 'text/x-vite-ping';
 /**
  * Middleware that responds to a ping requests.
  */
-export default (): Connect.NextHandleFunction => {
+export default function middleware(): Connect.NextHandleFunction {
   const debug = createDebugger('live-preview');
 
   return (req, res, next) => {
@@ -17,4 +17,4 @@ export default (): Connect.NextHandleFunction => {
     res.end();
     debug?.('ping received.');
   };
-};
+}

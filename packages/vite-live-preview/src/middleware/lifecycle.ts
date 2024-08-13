@@ -7,7 +7,7 @@ interface Options {
 /**
  * Middleware that invokes lifecycle callbacks.
  */
-export default ({ onRequest }: Options): Connect.NextHandleFunction => {
+export default function middleware({ onRequest }: Options): Connect.NextHandleFunction {
   return (req, res, next) => {
     let finished = false;
 
@@ -26,4 +26,4 @@ export default ({ onRequest }: Options): Connect.NextHandleFunction => {
     res.on('finish', onFinish);
     next();
   };
-};
+}

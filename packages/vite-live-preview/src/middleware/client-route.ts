@@ -14,7 +14,7 @@ export const CLIENT_SCRIPT_NAME = 'vite-live-preview/client.ts';
 /**
  * Middleware that serves the client script.
  */
-export default ({ base }: Options): Connect.NextHandleFunction => {
+export default function middleware({ base }: Options): Connect.NextHandleFunction {
   const debug = createDebugger('live-preview');
   const script = TEMPLATE_CLIENT_SCRIPT.replace(/(?<=const base *= *)'\/'/u, JSON.stringify(base));
   const length = Buffer.byteLength(script, 'utf8');
@@ -28,4 +28,4 @@ export default ({ base }: Options): Connect.NextHandleFunction => {
     res.end(script);
     debug?.('served client script.');
   };
-};
+}

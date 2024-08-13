@@ -23,8 +23,8 @@ export type LivePreviewConfig =
   | ((config: UserConfig, env: ConfigEnv) => Promise<
     | Omit<UserConfig, 'plugins'>
     | null
-    | void
-  > | Omit<UserConfig, 'plugins'> | null | void);
+    | undefined
+  > | Omit<UserConfig, 'plugins'> | null | undefined);
 
 export interface LivePreviewOptions {
   /**
@@ -53,7 +53,7 @@ const isWatchMode = process.argv.includes('--watch') || process.argv.includes('-
  * **NOTE:** This plugin forces `build.watch` when enabled, so the Vite build
  * `--watch` option is optional/implied.
  */
-export default ({ reload = true, config, plugins }: LivePreviewOptions = {}): Plugin => {
+export default function plugin({ reload = true, config, plugins }: LivePreviewOptions = {}): Plugin {
   let enabled = false;
 
   // resolved config
@@ -97,7 +97,7 @@ export default ({ reload = true, config, plugins }: LivePreviewOptions = {}): Pl
       // instance of the plugin. The override configuration has already been
       // applied, and that's fine. But, we only want one preview server, so all
       // subsequent hooks should be no-ops.
-      if (Array.from(resolvedConfig.plugins).reverse().find((p) => p.name === plugin.name) !== plugin) {
+      if ([...resolvedConfig.plugins].reverse().find((p) => p.name === plugin.name) !== plugin) {
         enabled = false;
         return;
       }
@@ -171,10 +171,10 @@ export default ({ reload = true, config, plugins }: LivePreviewOptions = {}): Pl
           clearTimeout(reloadDelay);
           reloadDelay = setTimeout(() => {
             debug?.(`sending page-reload to ${sockets.size} clients...`);
-            sockets.forEach((socket) => {
+            for (const socket of sockets) {
               socket.send(JSON.stringify({ type: 'page-reload' }));
               debug?.(`sent page-reload.`);
-            });
+            }
           }, 1000).unref();
         }
 
@@ -185,12 +185,7 @@ export default ({ reload = true, config, plugins }: LivePreviewOptions = {}): Pl
         logger.warn(chalk.yellow('[vite-live-preview] Using the --mode=preview* option is deprecated. Use the --watch option instead.'));
       }
 
-      const onConnect = (socket: WebSocket): void => {
-        sockets.add(socket);
-        socket.on('close', () => sockets.delete(socket));
-      };
-
-      const onRequest = (): (() => void) => {
+      function onRequest(): (() => void) {
         clearTimeout(deferToRequestsDelay);
         activeRequestCount++;
 
@@ -213,15 +208,11 @@ export default ({ reload = true, config, plugins }: LivePreviewOptions = {}): Pl
             }, 500).unref();
           }
         };
-      };
+      }
 
-      const getError = (): Error | undefined => {
-        return error;
-      };
-
-      const getBuildPromise = async (): Promise<void> => {
+      async function getBuildPromise(): Promise<void> {
         await deferToBuild?.promise;
-      };
+      }
 
       // Preload the preview config instead of letting the `preview()` function
       // load it. This is necessary so that the live preview plugin can be
@@ -261,7 +252,7 @@ export default ({ reload = true, config, plugins }: LivePreviewOptions = {}): Pl
 
       let restartCount = 0;
 
-      const createPreviewServer = async (): Promise<void> => {
+      async function createPreviewServer(): Promise<void> {
         const isRestart = Boolean(server);
 
         if (isRestart) {
@@ -303,12 +294,21 @@ export default ({ reload = true, config, plugins }: LivePreviewOptions = {}): Pl
             },
           ],
         });
-      };
+      }
 
       console.log();
       await createPreviewServer();
     },
   };
 
+  function onConnect(socket: WebSocket): void {
+    sockets.add(socket);
+    socket.on('close', () => sockets.delete(socket));
+  }
+
+  function getError(): Error | undefined {
+    return error;
+  }
+
   return plugin;
-};
+}

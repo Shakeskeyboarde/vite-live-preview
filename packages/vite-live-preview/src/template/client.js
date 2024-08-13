@@ -66,4 +66,4 @@ async function ping() {
       // ping failed
     }
   }
-};
+}

@@ -32,7 +32,7 @@ interface Options {
   readonly getBuildPromise: () => Promise<void>;
 }
 
-export default ({ onConnect, onRequest, getError, getBuildPromise }: Options): Plugin => {
+export default function plugin({ onConnect, onRequest, getError, getBuildPromise }: Options): Plugin {
   const debug = createDebugger('live-preview');
 
   return {
@@ -55,7 +55,11 @@ export default ({ onConnect, onRequest, getError, getBuildPromise }: Options): P
           debug?.(`connected.`);
           socket.on('message', (data) => {
             try {
-              const text = (Array.isArray(data) ? Buffer.concat(data) : data instanceof Buffer ? data : Buffer.from(data)).toString('utf8');
+              const text = (Array.isArray(data)
+                ? Buffer.concat(data)
+                : (data instanceof Buffer
+                    ? data
+                    : Buffer.from(data))).toString('utf8');
               const message = JSON.parse(text);
 
               if (message?.type === 'page-reload') {
@@ -83,4 +87,4 @@ export default ({ onConnect, onRequest, getError, getBuildPromise }: Options): P
       },
     },
   };
-};
+}

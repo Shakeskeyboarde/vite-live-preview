@@ -2,7 +2,7 @@ import { type Connect } from 'vite';
 
 import { createDebugger } from '../util/create-debugger.js';
 
-export default (): Connect.NextHandleFunction => {
+export default function middleware(): Connect.NextHandleFunction {
   const debug = createDebugger('live-preview-request');
 
   return (req, res, next) => {
@@ -12,4 +12,4 @@ export default (): Connect.NextHandleFunction => {
 
     next();
   };
-};
+}

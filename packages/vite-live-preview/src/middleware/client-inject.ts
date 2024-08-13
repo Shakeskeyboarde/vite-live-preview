@@ -14,7 +14,7 @@ const RESPONSE_HOOK_SYMBOL = Symbol('vite-live-preview');
 /**
  * Middleware that injects the client script into HTML responses.
  */
-export default ({ base }: Options): Connect.NextHandleFunction => {
+export default function middleware({ base }: Options): Connect.NextHandleFunction {
   const debug = createDebugger('live-preview');
   const clientSrc = JSON.stringify(path.posix.join(base, CLIENT_SCRIPT_NAME));
 
@@ -69,7 +69,7 @@ export default ({ base }: Options): Connect.NextHandleFunction => {
 
       let content: string | Buffer | undefined;
 
-      if (chunks.length) {
+      if (chunks.length > 0) {
         const buffer = Buffer.concat(chunks);
 
         chunks.length = 0;
@@ -114,7 +114,7 @@ export default ({ base }: Options): Connect.NextHandleFunction => {
       // supported. Restore the original response. This will also
       // commit any chunks that were already pushed.
       debug?.(`unsupported chunk type written to "${hookedUrl}".`);
-      restore?.();
+      restore();
 
       return res.write(chunk, ...args);
     };
@@ -128,7 +128,7 @@ export default ({ base }: Options): Connect.NextHandleFunction => {
 
       // The response is finished. Restore the original response if it
       // is not already restored.
-      restore?.();
+      restore();
       res.end();
 
       return res;
@@ -137,4 +137,4 @@ export default ({ base }: Options): Connect.NextHandleFunction => {
     debug?.(`hooked html request "${hookedUrl}".`);
     next();
   };
-};
+}

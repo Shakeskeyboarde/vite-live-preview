@@ -12,7 +12,7 @@ interface Options {
 /**
  * Middleware that serves an error page when an error is present.
  */
-export default ({ getError }: Options): Connect.NextHandleFunction => {
+export default function middleware({ getError }: Options): Connect.NextHandleFunction {
   const debug = createDebugger('live-preview');
 
   return (req, res, next) => {
@@ -38,4 +38,4 @@ export default ({ getError }: Options): Connect.NextHandleFunction => {
     res.end(html);
     debug?.(`served error page for "${req.url}".`);
   };
-};
+}

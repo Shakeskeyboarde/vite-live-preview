@@ -12,10 +12,10 @@
   "type": "module",
   "packageManager": "pnpm@9.7.0",
   "devDependencies": {
+    "@seahax/eslint": "^0.1.0",
     "@seahax/vite-plugin-finalize": "^0.1.0",
     "@types/node": "^22.2.0",
-    "eslint": "^8",
-    "eslint-config-rational": "^6.0.14",
+    "eslint": "^8.57.0",
     "lerna": "^8.1.8",
     "typescript": "^5.5.4",
     "vite": "^5.4.0",

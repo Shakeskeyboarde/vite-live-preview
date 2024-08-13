@@ -70,4 +70,4 @@ function parseBooleanArg(value: string): boolean {
   if (value === 'false') return false;
 
   throw new InvalidArgumentError('invalid clear screen option');
-};
+}
