@@ -1,17 +1,14 @@
-.vscode/
-.terraform/
-.nx/
-node_modules/
-lib/
-dist/
-out/
-coverage/
+.nx
+.vscode
+node_modules
+lib
+dist
+out
+coverage
 
 .DS_Store
-.env*
+*.log
 *.tar
 *.gz
 *.tgz
 *.zip
-*.log
-aws.ini
