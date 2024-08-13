@@ -1,67 +1,25 @@
 {
-  "name": "vite-live-preview",
-  "version": "0.3.2",
-  "description": "Vite build with preview.",
-  "license": "ISC",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/Shakeskeyboarde/vite-live-preview.git"
-  },
-  "keywords": [
-    "vite",
-    "live",
-    "preview",
-    "dev",
-    "watch",
-    "server"
-  ],
+  "name": "-",
+  "private": true,
+  "license": "Unlicense",
   "scripts": {
-    "build": "vite build",
-    "tsc": "tsc -p src/tsconfig.json",
-    "eslint": "eslint .",
-    "depcheck": "depcheck --ignores=typescript",
-    "test": "pnpm tsc --noEmit && pnpm eslint --max-warnings=0 && pnpm depcheck",
-    "global-install": "pnpm i -g \"$PWD\""
-  },
-  "files": [
-    "dist",
-    "bin.js"
-  ],
-  "bin": {
-    "vite-live-preview": "bin.js",
-    "vlp": "bin.js"
-  },
-  "types": "./dist/index.d.ts",
-  "exports": {
-    "types": "./dist/index.d.ts",
-    "import": "./dist/index.js"
+    "build": "lerna run build",
+    "lint": "eslint .",
+    "test": "pnpm lint --max-warnings=0",
+    "release": "lerna publish from-package --no-private",
+    "modernize": "npx npm-check-updates@latest -i --root --workspaces --peer --format group"
   },
   "type": "module",
-  "packageManager": "pnpm@9.3.0+sha256.e1f9e8d1a16607a46dd3c158b5f7a7dc7945501d1c6222d454d63d033d1d918f",
+  "packageManager": "pnpm@9.7.0",
   "devDependencies": {
-    "@types/node": "^20.14.2",
-    "depcheck": "^1.4.7",
+    "@seahax/vite-plugin-finalize": "^0.1.0",
+    "@types/node": "^22.2.0",
     "eslint": "^8",
-    "eslint-config-rational": "^5.0.15",
-    "typescript": "^5.4.5",
+    "eslint-config-rational": "^6.0.14",
+    "lerna": "^8.1.8",
+    "typescript": "^5.5.4",
+    "vite": "^5.4.0",
     "vite-plugin-config-lib": "^0.2.0",
-    "vite-plugin-data": "^0.2.5",
-    "vite-plugin-dts": "^3.9.1"
-  },
-  "dependencies": {
-    "@commander-js/extra-typings": "^12.1.0",
-    "@types/ansi-html": "^0.0.0",
-    "@types/debug": "^4.1.12",
-    "@types/ws": "^8.5.10",
-    "ansi-html": "^0.0.9",
-    "chalk": "^5.3.0",
-    "commander": "^12.1.0",
-    "debug": "^4.3.5",
-    "escape-goat": "^4.0.0",
-    "p-defer": "^4.0.1",
-    "ws": "^8.17.0"
-  },
-  "peerDependencies": {
-    "vite": ">=5.2.13"
+    "vite-plugin-data": "^0.2.5"
   }
 }

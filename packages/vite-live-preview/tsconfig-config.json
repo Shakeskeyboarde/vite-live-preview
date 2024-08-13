@@ -1,0 +1,17 @@
+{
+  "extends": "../../tsconfig-defaults.json",
+  "compilerOptions": {
+    "composite": true,
+    "tsBuildInfoFile": "node_modules/.tsc/config.tsbuildinfo",
+    "types": [
+      "node"
+    ]
+  },
+  "include": [
+    "*"
+  ],
+  "exclude": [
+    "dist",
+    "bin.js",
+  ]
+}

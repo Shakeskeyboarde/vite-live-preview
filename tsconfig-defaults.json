@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "module": "Node16",
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "types": [],
+    "jsx": "preserve",
+    "strict": true,
+    "strictNullChecks": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "forceConsistentCasingInFileNames": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "esModuleInterop": true,
+    "allowJs": true,
+    "noEmit": true
+  },
+}

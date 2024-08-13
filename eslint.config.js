@@ -1,6 +1,9 @@
-import { defaultRelaxedFiles, rational } from 'eslint-config-rational';
+import rational, { flatConfigBuilder } from 'eslint-config-rational';
 
-export default rational({
-  enableJsdoc: false,
-  relaxedFiles: [...defaultRelaxedFiles, '**/*.js'],
-});
+/**
+ * @type {Linter.FlatConfig[]}
+ */
+export default flatConfigBuilder()
+  .use(rational)
+  .ignore('**/{lib,dist,out,coverage}')
+  .build();

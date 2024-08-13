@@ -44,7 +44,7 @@ export default ({ base }: Options): Connect.NextHandleFunction => {
     const end = res.end.bind(res);
 
     const push = (chunk: unknown, ...args: any[]): boolean => {
-      const encoding = args.find((arg) => typeof arg === 'string');
+      const encoding = args.find((arg): arg is BufferEncoding => typeof arg === 'string');
       const callback = args.find((arg) => typeof arg === 'function');
 
       if (typeof chunk === 'string') {
