@@ -1,8 +1,12 @@
-.nx
 .vscode
+.nx
+.terraform
+.pnpm-store
+.claude
+.local
 node_modules
-lib
 dist
+lib
 out
 coverage
 
@@ -12,3 +16,6 @@ coverage
 *.gz
 *.tgz
 *.zip
+*.tfstate*
+*.local
+*.local.*

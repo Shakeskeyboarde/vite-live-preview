@@ -1,0 +1,7 @@
+{
+  "extends": "@seahax/tsconfig",
+  "compilerOptions": {
+    "types": [ "node" ]
+  },
+  "exclude": [ "src", "dist" ]
+}

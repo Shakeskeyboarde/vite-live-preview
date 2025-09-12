@@ -1,0 +1,64 @@
+{
+  "image": "ghcr.io/seahax/devcontainer:latest",
+  "runArgs": ["--name=devcontainer-${devcontainerId}"],
+  // Pull an updated image before (re-)building the dev container.
+  "initializeCommand": "docker pull ghcr.io/seahax/devcontainer:latest || true",
+  // Run the built-in bootstrap script.
+  "onCreateCommand": "~/.bootstrap.zsh",
+  "mounts": [
+    // Mount the host's home directory in the dev container.
+    "source=${localEnv:HOME}${localEnv:USERPROFILE},target=/mnt/home,type=bind"
+  ],
+  "features": {
+    // Support using docker inside the dev container.
+    "ghcr.io/devcontainers/features/docker-in-docker:2": { }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "bierner.markdown-preview-github-styles",
+        "byi8220.indented-block-highlighting",
+        "chrisbibby.hide-git-ignored",
+        "dbaeumer.vscode-eslint",
+        "donjayamanne.githistory",
+        "github.copilot-chat",
+        "github.copilot",
+        "maattdd.gitless",
+        "nhoizey.gremlins",
+        "pflannery.vscode-versionlens",
+        "redhat.vscode-yaml",
+        "streetsidesoftware.code-spell-checker-scientific-terms",
+        "streetsidesoftware.code-spell-checker",
+        "tamasfe.even-better-toml",
+        "unional.vscode-sort-package-json",
+        "vitest.explorer",
+        "yzhang.markdown-all-in-one",
+        "ms-azuretools.vscode-containers",
+        "qezhu.gitlink",
+        "Anthropic.claude-code",
+        "humao.rest-client"
+      ],
+      "settings": {
+        "remote.autoForwardPorts": true,
+        "remote.autoForwardPortsSource": "process",
+        "remote.autoForwardPortsFallback": 0,
+        "remote.restoreForwardedPorts": false,
+        "editor.tabSize": 2,
+        "files.eol": "\n",
+        "terminal.integrated.profiles.linux": {
+          // Dev containers don't have a "login", so (like mac) every new
+          // terminal should be a login terminal.
+          "zsh": { "path": "zsh", "args": [ "--login", "--interactive" ] },
+          // If you want to run bash, start it inside a zsh shell so that it
+          // inherits the zsh environment.
+          "bash": null
+        },
+        "terminal.integrated.defaultProfile.linux": "zsh",
+        "workbench.view.showQuietly": {
+          "workbench.panel.output": true
+        },
+        "typescript.tsdk": "node_modules/typescript/lib"
+      }
+    }
+  }
+}

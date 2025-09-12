@@ -12,11 +12,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with: { fetch-depth: 0 }
-      - run: corepack enable
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
       - uses: actions/setup-node@v4
-        with: { node-version: lts/*, registry-url: 'https://registry.npmjs.org' }
+        with:
+          node-version: lts/*
+          registry-url: https://registry.npmjs.org
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
       - run: pnpm test
-      - run: pnpm release --yes
+      - run: |
+          set -e
+          NAME=$(pnpm pkg get name | jq -r)
+          VERSION=$(pnpm pkg get version | jq -r)
+          if pnpm info "${NAME}@${VERSION}" &>/dev/null; then
+            echo "Not publishing package ${NAME}@${VERSION} because it already exists"
+          else
+            pnpm publish --dry-run
+          fi

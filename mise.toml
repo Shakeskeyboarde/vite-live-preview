@@ -1,0 +1,16 @@
+[tools]
+npm = "latest"
+pnpm = "latest"
+node = "lts"
+'npm:@anthropic-ai/claude-code' = "latest"
+
+[env]
+VITE_MODE = "development"
+
+[tasks.devcontainer_init]
+hide = true
+run = [
+  "ln -s -t ~ /mnt/home/.npmrc",
+  "pnpm install",
+  "pnpm build || true",
+]

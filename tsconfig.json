@@ -1,9 +1,12 @@
 {
-  "extends": "./tsconfig-defaults.json",
+  "extends": "@seahax/tsconfig",
   "compilerOptions": {
-    "types": ["node"]
+    "tsBuildInfoFile": "dist/tsconfig.node.tsbuildinfo",
+    "types": [ "node" ]
   },
-  "exclude": [
-    "**/src",
+  "exclude": [ "src", "dist" ],
+  "references": [
+    { "path": "./tsconfig.build.json" },
+    // { "path": "./tsconfig.node.json" },
   ]
 }

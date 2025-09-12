@@ -1,12 +1,11 @@
-import path from 'node:path';
-
 import { type Connect } from 'vite';
 
-import { createDebugger } from '../util/create-debugger.js';
-import { CLIENT_SCRIPT_NAME } from './client-route.js';
+import scriptTemplate from './template/client.data.ts';
 
-interface Options {
+interface Config {
+  readonly port: number | undefined;
   readonly base: string;
+  readonly debug: (message: string) => void;
 }
 
 const RESPONSE_HOOK_SYMBOL = Symbol('vite-live-preview');
@@ -14,17 +13,22 @@ const RESPONSE_HOOK_SYMBOL = Symbol('vite-live-preview');
 /**
  * Middleware that injects the client script into HTML responses.
  */
-export default function middleware({ base }: Options): Connect.NextHandleFunction {
-  const debug = createDebugger('live-preview');
-  const clientSrc = JSON.stringify(path.posix.join(base, CLIENT_SCRIPT_NAME));
+export default function middlewareReload({
+  port,
+  base,
+  debug,
+}: Config): Connect.NextHandleFunction {
+  const script = scriptTemplate
+    .replace('__LIVE_PREVIEW_CLIENT_PORT__', JSON.stringify(port))
+    .replace('__LIVE_PREVIEW_CLIENT_BASE__', JSON.stringify(base));
 
-  return (req, res, next) => {
-    if (!req.headers.accept?.includes('html')) return next();
+  return (req, res, next) => void (async () => {
+    if (!req.headers.accept?.includes('html')) return;
 
     // The response has already been hooked. Not sure why this middleware
     // would be applied to the same response multiple times, but just in
     // case.
-    if (RESPONSE_HOOK_SYMBOL in res) return next();
+    if (RESPONSE_HOOK_SYMBOL in res) return;
 
     Object.assign(res, { [RESPONSE_HOOK_SYMBOL]: true });
 
@@ -79,14 +83,14 @@ export default function middleware({ base }: Options): Connect.NextHandleFunctio
 
         if (injectIndex >= 0) {
           content = text.slice(0, injectIndex);
-          content += `<script src=${clientSrc}></script>\n`;
+          content += `<script>\n${script}\n</script>\n`;
           content += text.slice(injectIndex);
           res.setHeader('Content-Length', Buffer.byteLength(content, 'utf8'));
-          debug?.(`injected client script into "${req.url}".`);
+          debug(`injected client script into "${req.url}"`);
         }
         else {
           content = buffer;
-          debug?.(`client script not injected into "${req.url}".`);
+          debug(`client script not injected into "${req.url}"`);
         }
       }
 
@@ -95,7 +99,7 @@ export default function middleware({ base }: Options): Connect.NextHandleFunctio
 
       if (content) res.write(content);
 
-      debug?.(`unhooked html request "${hookedUrl}".`);
+      debug(`unhooked html request "${hookedUrl}"`);
     };
 
     res.writeHead = (...args: [any]) => {
@@ -113,7 +117,7 @@ export default function middleware({ base }: Options): Connect.NextHandleFunctio
       // If pushing fails, it means that the chunk type wasn't
       // supported. Restore the original response. This will also
       // commit any chunks that were already pushed.
-      debug?.(`unsupported chunk type written to "${hookedUrl}".`);
+      debug(`unsupported chunk type written to "${hookedUrl}"`);
       restore();
 
       return res.write(chunk, ...args);
@@ -134,7 +138,6 @@ export default function middleware({ base }: Options): Connect.NextHandleFunctio
       return res;
     };
 
-    debug?.(`hooked html request "${hookedUrl}".`);
-    next();
-  };
+    debug(`hooked html request "${hookedUrl}"`);
+  })().then(() => next(), (error: unknown) => next(error));
 }
