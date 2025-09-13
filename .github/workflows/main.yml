@@ -8,23 +8,30 @@ env:
   FORCE_COLOR: 1
   NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
 jobs:
-  build:
+  main:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: checkout
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: pnpm/action-setup@v4
+      - name: setup pnpm
+        uses: pnpm/action-setup@v4
         with:
           version: 10
-      - uses: actions/setup-node@v4
+      - name: setup node
+        uses: actions/setup-node@v4
         with:
           node-version: lts/*
           registry-url: https://registry.npmjs.org
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm build
-      - run: pnpm test
-      - run: |
+      - name: install
+        run: pnpm install --frozen-lockfile
+      - name: build
+        run: pnpm build
+      - name: test
+        run: pnpm test
+      - name: publish
+        run: |
           set -e
           NAME=$(pnpm pkg get name | jq -r)
           VERSION=$(pnpm pkg get version | jq -r)
