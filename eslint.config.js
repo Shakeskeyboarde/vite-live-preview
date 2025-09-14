@@ -1,6 +1,5 @@
-import seahax from '@seahax/eslint';
+import seahax, { defineConfig } from '@seahax/eslint';
 
-/** @type {import('eslint').Linter.Config[]} */
-export default [
+export default defineConfig(
   seahax(),
-].flat();
+);
