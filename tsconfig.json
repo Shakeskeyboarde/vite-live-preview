@@ -7,6 +7,5 @@
   "exclude": [ "src", "dist" ],
   "references": [
     { "path": "./tsconfig.build.json" },
-    // { "path": "./tsconfig.node.json" },
   ]
 }

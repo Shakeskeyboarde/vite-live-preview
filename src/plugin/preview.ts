@@ -1,3 +1,5 @@
+import deepCopy from '@seahax/deep-copy';
+import { createMutex, type Lock } from '@seahax/semaphore';
 import {
   createLogger,
   type Logger,
@@ -9,9 +11,8 @@ import {
 } from 'vite';
 import { type WebSocket } from 'ws';
 
-import pluginPreviewServerConfig from './plugin-preview-server-config.js';
-import deepCopy from './util/deep-copy.js';
-import createMutex, { type MutexLock } from './util/mutex.js';
+import { createDebugLogger } from '../util/create-debug-logger.js';
+import pluginPreviewServerConfig from './preview-server-config.js';
 
 interface LivePreviewServer {
   reload(): void;
@@ -64,12 +65,10 @@ export interface LivePreviewOptions {
 const IS_WATCHING = process.argv.includes('--watch') || process.argv.includes('-w');
 
 /**
- * Start a preview server if the build mode is `preview` or `preview:<mode>`.
- *
- * **NOTE:** This plugin forces `build.watch` when enabled, so the Vite build
- * `--watch` option is optional/implied.
+ * Start a preview server when building with file watching enabled (eg. `vite
+ * build --watch`).
  */
-export default function plugin({
+export default function pluginPreview({
   debug: isDebugEnabled = false,
   reload = true,
   config: previewOverrideConfig = {},
@@ -82,16 +81,25 @@ export default function plugin({
   let mode: string;
 
   // runtime state
-  let server: LivePreviewServer | undefined;
-  let error: Error | undefined;
-  let lock: MutexLock | undefined;
+  let livePreviewServer: LivePreviewServer | undefined;
+  let buildError: Error | undefined;
+  let mutexLock: Lock | undefined;
 
-  const debug = isDebugEnabled ? (message: string) => console.debug(`[vite-live-preview] ${message}`) : () => undefined;
-  const reloadConfig = typeof reload === 'object' ? reload : { enabled: reload };
+  const debugLogger = createDebugLogger(isDebugEnabled);
+  const {
+    enabled: reloadEnabled = true,
+    delay: reloadDelay = 1000,
+    clientPort: reloadClientPort,
+  } = typeof reload === 'object' ? reload : { enabled: reload };
   const mutex = createMutex<'build' | 'preview'>({
-    onAcquire: (owner) => debug(`${owner} acquired mutex`),
-    onRelease: (owner) => debug(`${owner} released mutex`),
+    onAcquire: (owner) => debugLogger.info(`${owner} acquired mutex`),
+    onRelease: (owner) => debugLogger.info(`${owner} released mutex`),
   });
+
+  debugLogger.info(reloadEnabled ? 'reload enabled' : 'reload disabled');
+  debugLogger.info(reloadDelay > 0 ? `reload delay: ${reloadDelay}ms` : 'no reload delay');
+  debugLogger.info(reloadClientPort ? `reload client port: ${reloadClientPort}` : 'automatic reload client port');
+
   const plugin: Plugin = {
     name: 'vite-live-preview',
     config: {
@@ -99,13 +107,13 @@ export default function plugin({
       handler(userConfig, env) {
         // Only enabled when building.
         if (env.command !== 'build') {
-          debug('disabled (not building)');
+          debugLogger.info('disabled (not building)');
           return;
         }
 
         // Only enabled if file watching is enabled.
         if (!userConfig.build?.watch && !IS_WATCHING) {
-          debug('disabled (not file watching)');
+          debugLogger.info('disabled (not file watching)');
           return;
         }
 
@@ -118,42 +126,44 @@ export default function plugin({
     },
     configResolved(resolvedConfig) {
       // Save the resolved config for later use.
-      logger = resolvedConfig.logger;
+      logger = createLogger(resolvedConfig.logLevel, { prefix: '[vite-live-preview]' });
     },
     async buildStart() {
       if (!enabled) return;
 
       // Avoid building and serving at the same time.
-      if (!lock?.active) {
-        lock = await mutex.acquire('build');
+      if (!mutexLock?.active) {
+        mutexLock = await mutex.acquire('build');
       }
     },
-    buildEnd(buildError) {
+    buildEnd(newBuildError) {
       if (!enabled) return;
 
       // Save build errors to be displayed by the preview server.
-      error = buildError;
+      buildError = newBuildError;
     },
     async closeBundle() {
       if (!enabled) return;
 
-      lock?.release();
+      mutexLock?.release();
 
-      if (server) {
-        server.reload();
+      if (livePreviewServer) {
+        livePreviewServer.reload();
         return;
       }
 
-      server = await createLivePreviewServer({
+      livePreviewServer = await createLivePreviewServer({
         config: mergeConfig(
           { ...baseConfig, plugins: [] },
           typeof previewOverrideConfig === 'function'
             ? await previewOverrideConfig({ command: 'serve', mode, isPreview: true, isSsrBuild: false })
             : await previewOverrideConfig,
         ),
-        reloadConfig,
+        reloadEnabled,
+        reloadDelay,
+        reloadClientPort,
         logger,
-        debug,
+        debugLogger,
       });
     },
   };
@@ -161,11 +171,13 @@ export default function plugin({
   return plugin;
 
   async function createLivePreviewServer(
-    { config, reloadConfig, logger, debug }: {
+    { config, reloadEnabled, reloadDelay, reloadClientPort, logger, debugLogger }: {
       readonly config: UserConfig;
-      readonly reloadConfig: ReloadConfig;
+      readonly reloadEnabled: boolean;
+      readonly reloadDelay: number;
+      readonly reloadClientPort: number | undefined;
       readonly logger: Logger;
-      readonly debug: (message: string) => void;
+      readonly debugLogger: Logger;
     },
   ): Promise<LivePreviewServer> {
     const sockets = new Set<WebSocket>();
@@ -174,9 +186,10 @@ export default function plugin({
 
     const previewServerConfig = pluginPreviewServerConfig({
       mutex,
-      reloadConfig,
-      debug,
-      getError: () => error,
+      reloadEnabled,
+      reloadClientPort,
+      debugLogger,
+      getBuildError: () => buildError,
       onConnect: (socket) => {
         sockets.add(socket);
         socket.on('close', () => sockets.delete(socket));
@@ -190,7 +203,7 @@ export default function plugin({
       plugins: [previewServerConfig, ...(config.plugins ?? [])],
     });
 
-    logger.info('live preview started', { timestamp: true });
+    logger.info('started', { timestamp: true });
     console.log();
     server.printUrls();
     server.bindCLIShortcuts({
@@ -215,18 +228,18 @@ export default function plugin({
 
     return {
       reload() {
-        if (!reloadConfig.enabled) return;
+        if (!reloadEnabled) return;
 
-        debug(`reload requested`);
+        debugLogger.info(`reload requested`);
         clearTimeout(reloadTimeout);
         reloadTimeout = setTimeout(() => {
-          logger.info('live preview reload', { timestamp: true });
-          debug(`sending page-reload to ${sockets.size} clients`);
+          logger.info('reloading', { timestamp: true });
+          debugLogger.info(`sending page-reload to ${sockets.size} clients`);
           for (const socket of sockets) {
             socket.send(JSON.stringify({ type: 'page-reload' }));
-            debug(`sent page-reload`);
+            debugLogger.info(`sent page-reload`);
           }
-        }, reloadConfig.delay ?? 1000).unref();
+        }, reloadDelay).unref();
       },
     };
   }

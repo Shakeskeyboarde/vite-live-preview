@@ -8,6 +8,12 @@ importers:
 
   .:
     dependencies:
+      '@seahax/deep-copy':
+        specifier: ^0.1.0
+        version: 0.1.0
+      '@seahax/semaphore':
+        specifier: ^0.5.1
+        version: 0.5.1
       '@types/ws':
         specifier: ^8.18.1
         version: 8.18.1
@@ -48,8 +54,6 @@ importers:
       vite:
         specifier: ^5.4.0
         version: 5.4.0(@types/node@24.3.2)
-
-  packages/vite-live-preview: {}
 
 packages:
 
@@ -356,6 +360,9 @@ packages:
   '@seahax/args@0.5.2':
     resolution: {integrity: sha512-diBgc9mwPohkaEmxo1H3+yZM6RvRqmWLwucitxGy6vMYp/ApsQCvGydq3if1jv4HBEr2klfIC/ubYJaHx58d9Q==}
 
+  '@seahax/deep-copy@0.1.0':
+    resolution: {integrity: sha512-Ux88qw9ypPbqszDGwj0JvP8FP017MV3ck7jnkit+0i3mecTkqhYiCUqy3exbxhGFBu07zrUS6yPRUWVct1eSMQ==}
+
   '@seahax/eslint-plugin-wrap@0.6.8':
     resolution: {integrity: sha512-P9a+fxaq0JzZKlltJiiuNCexoFGQ2pZGg1emQ2FPpeU0p1na0ZoGD8spBNHEQW6YVIRhG6msSEv1/YNQieczCQ==}
     peerDependencies:
@@ -375,6 +382,9 @@ packages:
   '@seahax/rev@0.2.4':
     resolution: {integrity: sha512-qCJ8QwDlnT1KkwK/JB4aE9ADnsImq7m6zY42EAzXHFElsSEr276fisjsv6knY4V6pfQ0uSGPSnB5/wKsqtxlPQ==}
     hasBin: true
+
+  '@seahax/semaphore@0.5.1':
+    resolution: {integrity: sha512-q6SXYYbE6X+LDcq2h2yCgE+pCWJumNP3XCZkztdG4S4tiig9akMZGp8TsfU/EIRcHWPdnQ3BA8/NAvdDYdF/NQ==}
 
   '@seahax/tsconfig@0.1.3':
     resolution: {integrity: sha512-LYKLG0MM4UmNefSlGaMeWG1FxaCa44WCwasRBFhJZaSBJdLf7b7raG5yPusTb+cF1V+HuklfKYDweTQEfWbpdQ==}
@@ -2070,6 +2080,8 @@ snapshots:
       chalk-template: 1.1.2
       wrap-ansi: 9.0.2
 
+  '@seahax/deep-copy@0.1.0': {}
+
   '@seahax/eslint-plugin-wrap@0.6.8(@typescript-eslint/parser@8.43.0(eslint@9.35.0)(typescript@5.9.2))(eslint@9.35.0)(typescript@5.9.2)':
     dependencies:
       '@types/eslint': 9.6.1
@@ -2119,6 +2131,8 @@ snapshots:
       execa: 9.6.0
       globby: 14.1.0
       semver: 7.7.2
+
+  '@seahax/semaphore@0.5.1': {}
 
   '@seahax/tsconfig@0.1.3': {}
 

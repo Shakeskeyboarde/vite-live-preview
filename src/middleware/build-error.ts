@@ -1,28 +1,28 @@
 import { htmlEscape } from 'escape-goat';
 import stripAnsi from 'strip-ansi';
-import { type Connect } from 'vite';
+import { type Connect, type Logger } from 'vite';
 
-import TEMPLATE_ERROR_HTML from './template/error.html?raw';
+import TEMPLATE_ERROR_HTML from '../template/error.html?raw';
+import { createMiddleware } from '../util/create-middleware.ts';
 
 interface Config {
-  readonly debug: (message: string) => void;
-  readonly getError: () => Error | undefined;
+  readonly debugLogger: Logger;
+  readonly getBuildError: () => Error | undefined;
 }
 
 /**
  * Middleware that serves an error page when an error is present.
  */
-export default function middlewareError({ debug, getError }: Config): Connect.NextHandleFunction {
-  return (req, res, next) => {
-    const error = getError();
+export default function middlewareBuildError({ debugLogger, getBuildError }: Config): Connect.NextHandleFunction {
+  return createMiddleware((req, res) => {
+    const error = getBuildError();
 
-    if (!error) return next();
+    if (!error) return;
 
     if (!req.headers.accept?.includes('html')) {
       res.statusCode = 500;
       res.end();
-      debug(`served empty error response for "${req.url}"`);
-
+      debugLogger.info(`served empty error response for "${req.url}" (html not accepted)`);
       return;
     }
 
@@ -37,6 +37,6 @@ export default function middlewareError({ debug, getError }: Config): Connect.Ne
     res.setHeader('Content-Type', 'text/html');
     res.setHeader('Content-Length', Buffer.byteLength(html, 'utf8'));
     res.end(html);
-    debug(`served error page for "${req.url}"`);
-  };
+    debugLogger.info(`served error page for "${req.url}"`);
+  });
 }

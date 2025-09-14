@@ -1,17 +1,18 @@
+import type { Lock, Mutex } from '@seahax/semaphore';
 import type { Connect } from 'vite';
 
-import type { Mutex, MutexLock } from './util/mutex.ts';
+import { createMiddleware } from '../util/create-middleware.ts';
 
 export interface Config {
   readonly mutex: Mutex<'build' | 'preview'>;
 }
 
 export default function middlewareMutex({ mutex }: Config): Connect.NextHandleFunction {
-  let lock: MutexLock | undefined;
+  let lock: Lock | undefined;
   let releaseTimeout: NodeJS.Timeout | undefined;
   let requestCount = 0;
 
-  return (_req, res, next) => void (async () => {
+  return createMiddleware(async (_req, res) => {
     clearTimeout(releaseTimeout);
     requestCount += 1;
 
@@ -47,5 +48,5 @@ export default function middlewareMutex({ mutex }: Config): Connect.NextHandleFu
       // the mutex lock.
       releaseTimeout = setTimeout(() => lock?.release(), 500).unref();
     }
-  })().then(() => next(), (error: unknown) => next(error));
+  });
 };

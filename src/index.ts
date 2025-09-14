@@ -1,2 +1,2 @@
-export { default } from './plugin.js';
-export * from './plugin.js';
+export { default } from './plugin/preview.js';
+export * from './plugin/preview.js';

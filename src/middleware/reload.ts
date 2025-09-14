@@ -1,11 +1,12 @@
-import { type Connect } from 'vite';
+import { type Connect, type Logger } from 'vite';
 
-import scriptTemplate from './template/client.data.ts';
+import scriptTemplate from '../template/client.data.ts';
+import { createMiddleware } from '../util/create-middleware.ts';
 
 interface Config {
-  readonly port: number | undefined;
   readonly base: string;
-  readonly debug: (message: string) => void;
+  readonly clientPort: number | undefined;
+  readonly debugLogger: Logger;
 }
 
 const RESPONSE_HOOK_SYMBOL = Symbol('vite-live-preview');
@@ -13,16 +14,12 @@ const RESPONSE_HOOK_SYMBOL = Symbol('vite-live-preview');
 /**
  * Middleware that injects the client script into HTML responses.
  */
-export default function middlewareReload({
-  port,
-  base,
-  debug,
-}: Config): Connect.NextHandleFunction {
+export default function middlewareReload({ base, clientPort, debugLogger }: Config): Connect.NextHandleFunction {
   const script = scriptTemplate
-    .replace('__LIVE_PREVIEW_CLIENT_PORT__', JSON.stringify(port))
+    .replace('__LIVE_PREVIEW_CLIENT_PORT__', JSON.stringify(clientPort))
     .replace('__LIVE_PREVIEW_CLIENT_BASE__', JSON.stringify(base));
 
-  return (req, res, next) => void (async () => {
+  return createMiddleware(async (req, res) => {
     if (!req.headers.accept?.includes('html')) return;
 
     // The response has already been hooked. Not sure why this middleware
@@ -86,11 +83,11 @@ export default function middlewareReload({
           content += `<script>\n${script}\n</script>\n`;
           content += text.slice(injectIndex);
           res.setHeader('Content-Length', Buffer.byteLength(content, 'utf8'));
-          debug(`injected client script into "${req.url}"`);
+          debugLogger.info(`injected client script into "${req.url}"`);
         }
         else {
           content = buffer;
-          debug(`client script not injected into "${req.url}"`);
+          debugLogger.warn(`client script not injected into "${req.url}"`);
         }
       }
 
@@ -99,7 +96,7 @@ export default function middlewareReload({
 
       if (content) res.write(content);
 
-      debug(`unhooked html request "${hookedUrl}"`);
+      debugLogger.info(`unhooked html request "${hookedUrl}"`);
     };
 
     res.writeHead = (...args: [any]) => {
@@ -117,7 +114,7 @@ export default function middlewareReload({
       // If pushing fails, it means that the chunk type wasn't
       // supported. Restore the original response. This will also
       // commit any chunks that were already pushed.
-      debug(`unsupported chunk type written to "${hookedUrl}"`);
+      debugLogger.warn(`unsupported chunk type written to "${hookedUrl}"`);
       restore();
 
       return res.write(chunk, ...args);
@@ -138,6 +135,6 @@ export default function middlewareReload({
       return res;
     };
 
-    debug(`hooked html request "${hookedUrl}"`);
-  })().then(() => next(), (error: unknown) => next(error));
+    debugLogger.info(`hooked html request "${hookedUrl}"`);
+  });
 }
