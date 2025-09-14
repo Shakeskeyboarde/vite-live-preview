@@ -15,15 +15,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10
-      - name: setup node
-        uses: actions/setup-node@v4
-        with:
-          node-version: lts/*
-          registry-url: https://registry.npmjs.org
+      - name: mise
+        uses: jdx/mise-action@v2
       - name: install
         run: pnpm install --frozen-lockfile
       - name: build
@@ -31,12 +24,4 @@ jobs:
       - name: test
         run: pnpm test
       - name: publish
-        run: |
-          set -e
-          NAME=$(pnpm pkg get name | jq -r)
-          VERSION=$(pnpm pkg get version | jq -r)
-          if pnpm info "${NAME}@${VERSION}" &>/dev/null; then
-            echo "Not publishing package ${NAME}@${VERSION} because it already exists"
-          else
-            pnpm publish --dry-run
-          fi
+        run: npx rev publish
