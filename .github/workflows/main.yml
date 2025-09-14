@@ -25,4 +25,5 @@ jobs:
       - name: test
         run: pnpm test
       - name: publish
+        if: github.ref_type == 'tag'
         run: npx rev publish
